@@ -20,7 +20,7 @@ function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
             <School className="h-8 w-8" />
-            <span className="font-bold text-xl">College Portal</span>
+            <span className="font-bold text-xl">Campus360</span>
           </Link>
           
           <div className="hidden md:flex space-x-8">
