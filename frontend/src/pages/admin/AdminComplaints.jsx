@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, Shield, Eye } from 'lucide-react';
+import { MessageSquare, Shield, Eye, ThumbsUp } from 'lucide-react';
 
 function AdminComplaints() {
   const [complaints, setComplaints] = useState([
@@ -35,6 +35,12 @@ function AdminComplaints() {
     ));
   };
 
+  // Calculate total votes
+  const totalVotes = complaints.reduce((sum, complaint) => sum + complaint.votes, 0);
+
+  // Sort complaints by votes in descending order
+  const sortedComplaints = [...complaints].sort((a, b) => b.votes - a.votes);
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-md">
@@ -48,33 +54,33 @@ function AdminComplaints() {
             <MessageSquare className="h-6 w-6" />
             <h2 className="text-lg font-semibold">Active Complaints</h2>
           </div>
-          <p className="mt-2 text-3xl font-bold text-gray-900">3</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {complaints.length}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center space-x-2 text-green-600">
             <Shield className="h-6 w-6" />
             <h2 className="text-lg font-semibold">Resolved</h2>
           </div>
-          <p className="mt-2 text-3xl font-bold text-gray-900">1</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {complaints.filter(c => c.status === 'Resolved').length}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center space-x-2 text-yellow-600">
             <Eye className="h-6 w-6" />
             <h2 className="text-lg font-semibold">Under Review</h2>
           </div>
-          <p className="mt-2 text-3xl font-bold text-gray-900">2</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {complaints.filter(c => c.status === 'Under Review').length}
+          </p>
         </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-md">
-        <div className="p-6 border-b border-gray-200">
-          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-            Add New Complaint
-          </button>
-        </div>
-        
         <div className="divide-y divide-gray-200">
-          {complaints.map((complaint) => (
+          {sortedComplaints.map((complaint) => (
             <div key={complaint.id} className="p-6">
               <div className="flex justify-between items-start">
                 <div>
@@ -87,6 +93,10 @@ function AdminComplaints() {
                         complaint.status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-blue-100 text-blue-800'}`}>
                       {complaint.status}
+                    </span>
+                    <span className="flex items-center text-blue-600">
+                      <ThumbsUp className="h-4 w-4 mr-1" />
+                      {complaint.votes} upvotes
                     </span>
                   </div>
                 </div>
