@@ -29,7 +29,7 @@ function Login() {
         <div className="text-center">
           <School className="mx-auto h-12 w-12 text-indigo-600" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Sign in to College Portal
+            Sign in to Campus360
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Use admin@college.edu for admin access<br />
