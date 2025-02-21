@@ -26,7 +26,7 @@ function Login() {
     try {
       // Make API call to the backend login endpoint
       const res = await axios.post(
-        "http://localhost:8080/api/v1/student/login", 
+        `http://localhost:8080/api/v1/auth/login`, 
         { email, password },
         {
           headers: {
