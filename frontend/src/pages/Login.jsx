@@ -45,13 +45,15 @@ function Login() {
       login({ email, fullName }, token, role);
 
       // Redirect based on role
-      if (role === 'admin') {
-        navigate('/admin-dashboard');
-      } else if (role === 'student') {
-        navigate('/student-dashboard');
-      } else if (role === 'doctor') {
-        navigate('/doctor-dashboard');
-      }
+      // if (role === 'admin') {
+      //   navigate('/admin-dashboard');
+      // } else if (role === 'student') {
+      //   navigate('/student-dashboard');
+      // } else if (role === 'doctor') {
+      //   navigate('/doctor-dashboard');
+      // }
+
+      navigate('/dashboard'); // Redirect to the dashboard page
 
       toast.success(`Welcome ${role}!`);
     } catch (error) {
