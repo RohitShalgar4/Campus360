@@ -4,6 +4,9 @@ import cors from "cors";
 import connectDB from "./database/db.js";
 import dotenv from "dotenv";
 import studentRoute from "./routes/studentRoute.js";
+import adminRoute from "./routes/adminRoute.js";
+import doctorRoute from "./routes/doctorRoute.js";
+import loginRoute from "./routes/loginRoute.js";
 
 dotenv.config({});
 connectDB();
@@ -33,6 +36,9 @@ app.use(
 // Routes
 
 app.use("/api/v1/student", studentRoute);
+app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/doctor", doctorRoute);
+app.use("/api/v1/auth", loginRoute);
 
 app.listen(PORT, () => {
   console.log(`Server listen at port ${PORT}`);
