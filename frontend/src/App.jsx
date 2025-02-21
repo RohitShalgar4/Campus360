@@ -15,6 +15,7 @@ import StudentElections from './pages/student/StudentElections';
 import AdminElections from './pages/admin/AdminElections';
 import StudentFacilities from './pages/student/StudentFacilities';
 import AdminFacilities from './pages/admin/AdminFacilities';
+import LandingPage from './components/LandingPage'; // Ensure this import is correct
 
 function App() {
   const { role } = useAuthStore();
@@ -26,12 +27,15 @@ function App() {
         <Navbar />
         <main className="container mx-auto px-4 py-8">
           <Routes>
+            {/* Public Route: Landing Page (Default Route) */}
+            <Route path="/" element={<LandingPage />} />
+
             {/* Public Route: Login Page */}
             <Route path="/login" element={<Login />} />
 
             {/* Protected Routes */}
             <Route
-              path="/"
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   {role === 'admin' ? <AdminDashboard /> : <StudentDashboard />}
