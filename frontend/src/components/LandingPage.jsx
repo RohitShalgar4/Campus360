@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Moon, School, Sun, GraduationCap, Star, Users, BookOpen } from 'lucide-react';
+import Navbar from './Navbar.jsx';
 
 function LandingPage() {
   const [darkMode, setDarkMode] = useState(false);
@@ -41,7 +42,7 @@ function LandingPage() {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       {/* Navbar */}
-      <nav className="fixed w-full px-6 py-4 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 z-50">
+      {/* <nav className="fixed w-full px-6 py-4 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-2">
             <School className="h-8 w-8" />
@@ -72,10 +73,12 @@ function LandingPage() {
             </Link>
           </div>
         </div>
-      </nav>
+      </nav> */}
+
+      {/* <Navbar /> */}
 
       {/* Main Content Container with top padding for navbar */}
-      <div className="pt-16">
+      <div className="pt-4">
         {/* Hero Section */}
         <div className="relative min-h-screen flex items-center">
           {/* Background Image with Gradient Overlay */}
