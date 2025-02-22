@@ -4,55 +4,46 @@ import { Vote, Users, Award } from 'lucide-react';
 function StudentElections() {
   const [activeElections, setActiveElections] = useState([]);
 
-  // Fetch active elections from the backend
   useEffect(() => {
     const fetchElections = async () => {
       try {
-        const response = await fetch('/api/v1/elections'); // Replace with your API endpoint
-        if (!response.ok) {
-          throw new Error('Failed to fetch elections');
-        }
+        const response = await fetch('/api/v1/elections'); // Proxied to 8080
+        if (!response.ok) throw new Error('Failed to fetch elections');
         const data = await response.json();
         setActiveElections(data);
       } catch (error) {
         console.error('Error fetching elections:', error);
       }
     };
-
     fetchElections();
   }, []);
 
-  // Handle voting for a candidate
   const handleVote = async (electionId, candidateId) => {
     try {
       const response = await fetch(`/api/v1/elections/${electionId}/vote/${candidateId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies if authentication is required
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // If auth is implemented
       });
 
       if (!response.ok) {
-        throw new Error('Failed to record vote');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to record vote');
       }
 
       const updatedElection = await response.json();
-
-      // Update the election in the state
       setActiveElections((prevElections) =>
         prevElections.map((election) =>
-          election.id === updatedElection.id ? updatedElection : election
+          election._id === updatedElection.election._id ? updatedElection.election : election
         )
       );
-
-      console.log('Vote recorded successfully');
+      alert('Vote recorded successfully!');
     } catch (error) {
       console.error('Error recording vote:', error);
+      alert(error.message);
     }
   };
 
-  // Calculate total candidates and positions
   const totalCandidates = activeElections.reduce(
     (sum, election) => sum + election.candidates.length,
     0
@@ -95,46 +86,48 @@ function StudentElections() {
 
       <div className="space-y-6">
         {activeElections.map((election) => (
-          <div key={election.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div key={election._id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-900">{election.title}</h2>
               <p className="mt-1 text-gray-600">{election.description}</p>
-              <p className="mt-2 text-sm text-indigo-600">Deadline: {election.deadline}</p>
+              <p className="mt-2 text-sm text-indigo-600">
+                Deadline: {new Date(election.deadline).toLocaleDateString()}
+              </p>
             </div>
             <div className="border-t border-gray-200">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Candidate
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Position
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Votes
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                       Action
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {election.candidates.map((candidate) => (
-                    <tr key={candidate.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{candidate.name}</div>
+                    <tr key={candidate._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {candidate.name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{candidate.position}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {candidate.position}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{candidate.votes}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {candidate.votes}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <button
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                          onClick={() => handleVote(election.id, candidate.id)}
+                          onClick={() => handleVote(election._id, candidate._id)}
+                          className="inline-flex items-center px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                         >
                           Vote
                         </button>
