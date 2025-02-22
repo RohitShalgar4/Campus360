@@ -15,8 +15,30 @@ import StudentElections from './pages/student/StudentElections';
 import AdminElections from './pages/admin/AdminElections';
 import StudentFacilities from './pages/student/StudentFacilities';
 import AdminFacilities from './pages/admin/AdminFacilities';
-import LandingPage from './components/LandingPage'; // Ensure this import is correct
+import LandingPage from './components/LandingPage';
+import Applications from './pages/admin/AdminApprovalApplication';
+import AdminApprovalDashboard from './pages/admin/AdminApprovalDashboard';
+import SubmitApplication from './pages/student/StudentApprovalSubmit';
+import ApplicationDetails from './pages/admin/AdminApprovalApplicationDetails';
+import AdminViolation from './pages/admin/AdminViolation';
+import StudentViolation from './pages/student/StudentViolation';
+import { Shield, LogOut } from 'lucide-react';
 
+// Academic Integrity System Component
+const AcademicIntegritySystem = () => {
+  const { role } = useAuthStore();
+  const isAdmin = role === 'admin';
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto px-4 py-8">
+        {isAdmin ? <AdminViolation /> : <StudentViolation />}
+      </main>
+    </div>
+  );
+};
+
+// Main App component
 function App() {
   const { role } = useAuthStore();
 
@@ -79,6 +101,50 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   {role === 'admin' ? <AdminBudget /> : <Navigate to="/" />}
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Approval Portal Routes */}
+            <Route
+              path="/approvaldashboard"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminApprovalDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/applications"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Applications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/applications/:id"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ApplicationDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/submit"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <SubmitApplication />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Academic Integrity System Page */}
+            <Route
+              path="/academic-integrity"
+              element={
+                <ProtectedRoute>
+                  <AcademicIntegritySystem />
                 </ProtectedRoute>
               }
             />
