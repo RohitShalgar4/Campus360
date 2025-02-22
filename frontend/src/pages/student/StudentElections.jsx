@@ -1,35 +1,66 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Vote, Users, Award } from 'lucide-react';
 
 function StudentElections() {
-  const activeElections = [
-    {
-      id: 1,
-      title: 'Student Council President',
-      description: 'Vote for your next student council president',
-      deadline: '2024-03-25',
-      candidates: [
-        { id: 1, name: 'Sarah Johnson', votes: 145, position: 'President' },
-        { id: 2, name: 'Michael Chen', votes: 132, position: 'President' },
-        { id: 3, name: 'Emily Rodriguez', votes: 128, position: 'President' }
-      ]
-    },
-    {
-      id: 2,
-      title: 'Department Representatives',
-      description: 'Select your department representatives',
-      deadline: '2024-03-28',
-      candidates: [
-        { id: 4, name: 'David Kim', votes: 78, position: 'CS Rep' },
-        { id: 5, name: 'Lisa Patel', votes: 82, position: 'CS Rep' }
-      ]
-    }
-  ];
+  const [activeElections, setActiveElections] = useState([]);
 
-  const handleVote = (electionId, candidateId) => {
-    console.log(`Voted for candidate ${candidateId} in election ${electionId}`);
-    // Add logic to handle voting
+  // Fetch active elections from the backend
+  useEffect(() => {
+    const fetchElections = async () => {
+      try {
+        const response = await fetch('/api/v1/elections'); // Replace with your API endpoint
+        if (!response.ok) {
+          throw new Error('Failed to fetch elections');
+        }
+        const data = await response.json();
+        setActiveElections(data);
+      } catch (error) {
+        console.error('Error fetching elections:', error);
+      }
+    };
+
+    fetchElections();
+  }, []);
+
+  // Handle voting for a candidate
+  const handleVote = async (electionId, candidateId) => {
+    try {
+      const response = await fetch(`/api/v1/elections/${electionId}/vote/${candidateId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies if authentication is required
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to record vote');
+      }
+
+      const updatedElection = await response.json();
+
+      // Update the election in the state
+      setActiveElections((prevElections) =>
+        prevElections.map((election) =>
+          election.id === updatedElection.id ? updatedElection : election
+        )
+      );
+
+      console.log('Vote recorded successfully');
+    } catch (error) {
+      console.error('Error recording vote:', error);
+    }
   };
+
+  // Calculate total candidates and positions
+  const totalCandidates = activeElections.reduce(
+    (sum, election) => sum + election.candidates.length,
+    0
+  );
+  const totalPositions = activeElections.reduce(
+    (sum, election) => sum + new Set(election.candidates.map((c) => c.position)).size,
+    0
+  );
 
   return (
     <div className="space-y-6">
@@ -44,21 +75,21 @@ function StudentElections() {
             <Vote className="h-6 w-6" />
             <h2 className="text-lg font-semibold">Active Elections</h2>
           </div>
-          <p className="mt-2 text-3xl font-bold text-gray-900">2</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{activeElections.length}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center space-x-2 text-indigo-600">
             <Users className="h-6 w-6" />
             <h2 className="text-lg font-semibold">Total Candidates</h2>
           </div>
-          <p className="mt-2 text-3xl font-bold text-gray-900">5</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{totalCandidates}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center space-x-2 text-indigo-600">
             <Award className="h-6 w-6" />
             <h2 className="text-lg font-semibold">Positions</h2>
           </div>
-          <p className="mt-2 text-3xl font-bold text-gray-900">2</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{totalPositions}</p>
         </div>
       </div>
 
