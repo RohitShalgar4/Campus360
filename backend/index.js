@@ -8,7 +8,9 @@ import adminRoute from "./routes/adminRoute.js";
 import doctorRoute from "./routes/doctorRoute.js";
 import loginRoute from "./routes/loginRoute.js";
 import complaintRoute from "./routes/complaintsRoute.js";
-import facilityRoute from "./routes/facilityRoute.js"; // Combined facility and booking routes
+import facilityRoute from "./routes/facilityRoute.js";
+import bookingRoute from "./routes/bookingRoute.js";
+import { electionRouter } from './routes/electionRoutes.js';
 
 dotenv.config({});
 connectDB(); // Connect to the database
@@ -22,7 +24,7 @@ app.use(express.json()); // Parse JSON request bodies
 app.use(cookieParser()); // Parse cookies
 
 // CORS Configuration
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174']; // Add both frontend URLs
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174']; // Combined allowed origins
 
 app.use(
   cors({
@@ -39,12 +41,14 @@ app.use(
 );
 
 // Routes
-app.use("/api/v1/student", studentRoute); // Student routes
-app.use("/api/v1/admin", adminRoute); // Admin routes
-app.use("/api/v1/doctor", doctorRoute); // Doctor routes
-app.use("/api/v1/auth", loginRoute); // Authentication routes
-app.use('/api/complaints', complaintRoute); // Complaints routes
-app.use('/api/facilities', facilityRoute); // Combined facility and booking routes
+app.use("/api/v1/student", studentRoute);     // Student routes
+app.use("/api/v1/admin", adminRoute);         // Admin routes
+app.use("/api/v1/doctor", doctorRoute);       // Doctor routes
+app.use("/api/v1/auth", loginRoute);          // Authentication routes
+app.use("/api/complaints", complaintRoute);   // Complaints routes
+app.use("/api/v1/facilities", facilityRoute); // Facility routes
+app.use("/api/v1/bookings", bookingRoute);    // Booking routes
+app.use("/api/v1/elections", electionRouter); // Election routes
 
 // Default route
 app.get("/", (req, res) => {
