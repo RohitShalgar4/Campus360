@@ -1,38 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageSquare, Shield, Eye, ThumbsUp } from 'lucide-react';
+import {
+  fetchComplaints,
+  updateComplaintStatus,
+} from '../../services/api';
 
 function AdminComplaints() {
-  const [complaints, setComplaints] = useState([
-    {
-      id: 1,
-      title: 'Library Hours Extension',
-      description: 'Request to extend library hours during exam weeks',
-      status: 'Under Review',
-      date: '2024-03-18',
-      votes: 45
-    },
-    {
-      id: 2,
-      title: 'Cafeteria Food Quality',
-      description: 'Concerns about the quality of food served in the cafeteria',
-      status: 'Investigating',
-      date: '2024-03-17',
-      votes: 32
-    },
-    {
-      id: 3,
-      title: 'Parking Space Allocation',
-      description: 'Need more designated parking spaces for students',
-      status: 'Resolved',
-      date: '2024-03-15',
-      votes: 28
-    }
-  ]);
+  const [complaints, setComplaints] = useState([]);
 
-  const handleStatusChange = (id, newStatus) => {
-    setComplaints(complaints.map(complaint => 
-      complaint.id === id ? { ...complaint, status: newStatus } : complaint
-    ));
+  // Fetch complaints from the backend
+  useEffect(() => {
+    const getComplaints = async () => {
+      try {
+        const data = await fetchComplaints();
+        setComplaints(data);
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      }
+    };
+    getComplaints();
+  }, []);
+
+  // Handle status change
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const updatedComplaint = await updateComplaintStatus(id, newStatus);
+      setComplaints((prevComplaints) =>
+        prevComplaints.map((complaint) =>
+          complaint._id === id ? updatedComplaint : complaint
+        )
+      );
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
   };
 
   // Calculate total votes
@@ -81,13 +81,13 @@ function AdminComplaints() {
       <div className="bg-white rounded-lg shadow-md">
         <div className="divide-y divide-gray-200">
           {sortedComplaints.map((complaint) => (
-            <div key={complaint.id} className="p-6">
+            <div key={complaint._id} className="p-6">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">{complaint.title}</h3>
                   <p className="mt-1 text-gray-600">{complaint.description}</p>
                   <div className="mt-2 flex items-center space-x-4 text-sm">
-                    <span className="text-gray-500">Submitted: {complaint.date}</span>
+                    <span className="text-gray-500">Submitted: {new Date(complaint.date).toLocaleDateString()}</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium
                       ${complaint.status === 'Resolved' ? 'bg-green-100 text-green-800' :
                         complaint.status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
@@ -104,7 +104,7 @@ function AdminComplaints() {
                   <select
                     className="px-2 py-1 border border-gray-300 rounded-lg"
                     value={complaint.status}
-                    onChange={(e) => handleStatusChange(complaint.id, e.target.value)}
+                    onChange={(e) => handleStatusChange(complaint._id, e.target.value)}
                   >
                     <option value="Under Review">Under Review</option>
                     <option value="Investigating">Investigating</option>
