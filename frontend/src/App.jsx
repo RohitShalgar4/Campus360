@@ -99,8 +99,8 @@ function App() {
             <Route
               path="/budget"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  {role === 'admin' ? <AdminBudget /> : <Navigate to="/" />}
+                <ProtectedRoute>
+                  {role === 'admin' ? <AdminBudget /> : <StudentBudget />}
                 </ProtectedRoute>
               }
             />
