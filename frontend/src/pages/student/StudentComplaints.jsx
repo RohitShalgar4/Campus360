@@ -1,7 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Shield, Eye } from 'lucide-react';
+import {
+  fetchComplaints,
+  addComplaint,
+  upvoteComplaint,
+} from '../../services/api';
 
 function StudentComplaints() {
+  const [complaints, setComplaints] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const dialogRef = useRef(null);
 
@@ -12,51 +18,32 @@ function StudentComplaints() {
     "Food Services",
     "Transportation",
     "Technology",
-    "Other"
+    "Other",
   ];
-
-  const [complaints, setComplaints] = useState([
-    {
-      id: 1,
-      title: 'Library Hours Extension',
-      description: 'Request to extend library hours during exam weeks',
-      category: 'Facilities',
-      status: 'Under Review',
-      date: '2024-03-18',
-      votes: 45,
-      imageUrl: null
-    },
-    {
-      id: 2,
-      title: 'Cafeteria Food Quality',
-      description: 'Concerns about the quality of food served in the cafeteria',
-      category: 'Food Services',
-      status: 'Investigating',
-      date: '2024-03-17',
-      votes: 32,
-      imageUrl: null
-    },
-    {
-      id: 3,
-      title: 'Parking Space Allocation',
-      description: 'Need more designated parking spaces for students',
-      category: 'Transportation',
-      status: 'Resolved',
-      date: '2024-03-15',
-      votes: 28,
-      imageUrl: null
-    }
-  ]);
 
   const [newComplaint, setNewComplaint] = useState({
     title: '',
     description: '',
     category: '',
-    imageUrl: null
+    imageUrl: null,
   });
 
   const [imagePreview, setImagePreview] = useState(null);
 
+  // Fetch complaints from the backend
+  useEffect(() => {
+    const getComplaints = async () => {
+      try {
+        const data = await fetchComplaints();
+        setComplaints(data);
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      }
+    };
+    getComplaints();
+  }, []);
+
+  // Handle image change
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -66,23 +53,32 @@ function StudentComplaints() {
     }
   };
 
-  const handleSubmitComplaint = (e) => {
+  // Handle submitting a new complaint
+  const handleSubmitComplaint = async (e) => {
     e.preventDefault();
-    const complaint = {
-      id: complaints.length + 1,
-      title: newComplaint.title,
-      description: newComplaint.description,
-      category: newComplaint.category,
-      status: 'Under Review',
-      date: new Date().toISOString().split('T')[0],
-      votes: 0,
-      imageUrl: newComplaint.imageUrl
-    };
+    try {
+      const addedComplaint = await addComplaint(newComplaint);
+      setComplaints([addedComplaint, ...complaints]);
+      setNewComplaint({ title: '', description: '', category: '', imageUrl: null });
+      setImagePreview(null);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding complaint:', error);
+    }
+  };
 
-    setComplaints([complaint, ...complaints]);
-    setNewComplaint({ title: '', description: '', category: '', imageUrl: null });
-    setImagePreview(null);
-    setIsDialogOpen(false);
+  // Handle upvoting a complaint
+  const handleVote = async (id) => {
+    try {
+      const updatedComplaint = await upvoteComplaint(id);
+      setComplaints((prevComplaints) =>
+        prevComplaints.map((complaint) =>
+          complaint._id === id ? updatedComplaint : complaint
+        )
+      );
+    } catch (error) {
+      console.error('Error upvoting complaint:', error);
+    }
   };
 
   // Close dialog when clicking outside
@@ -92,17 +88,6 @@ function StudentComplaints() {
     }
   };
 
-  const handleVote = (id) => {
-    setComplaints(prevComplaints =>
-      prevComplaints.map(complaint =>
-        complaint.id === id
-          ? { ...complaint, votes: complaint.votes + 1 }
-          : complaint
-      )
-    );
-    console.log(`Voted for complaint ${id}`);
-  };
-  
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-md">
@@ -246,7 +231,7 @@ function StudentComplaints() {
 
         <div className="divide-y divide-gray-200">
           {complaints.map((complaint) => (
-            <div key={complaint.id} className="p-6">
+            <div key={complaint._id} className="p-6">
               <div className="flex justify-between items-start">
                 <div className="flex-grow">
                   <h3 className="text-lg font-medium text-gray-900">{complaint.title}</h3>
@@ -262,7 +247,7 @@ function StudentComplaints() {
                     />
                   )}
                   <div className="mt-2 flex items-center space-x-4 text-sm">
-                    <span className="text-gray-500">Submitted: {complaint.date}</span>
+                    <span className="text-gray-500">Submitted: {new Date(complaint.date).toLocaleDateString()}</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium
                   ${complaint.status === 'Resolved' ? 'bg-green-100 text-green-800' :
                         complaint.status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
@@ -274,7 +259,7 @@ function StudentComplaints() {
                 <div className="flex flex-col items-center space-y-1">
                   <button
                     className="text-gray-400 hover:text-gray-500 transition-colors duration-200"
-                    onClick={() => handleVote(complaint.id)}
+                    onClick={() => handleVote(complaint._id)}
                     aria-label="Upvote complaint"
                   >
                     <svg
@@ -300,6 +285,6 @@ function StudentComplaints() {
       </div>
     </div>
   );
-};
+}
 
 export default StudentComplaints;
