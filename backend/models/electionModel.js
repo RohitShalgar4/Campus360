@@ -1,4 +1,4 @@
-// models/Election.js
+// models/electionModel.js
 import mongoose from 'mongoose';
 
 const candidateSchema = new mongoose.Schema({
@@ -17,6 +17,8 @@ const electionSchema = new mongoose.Schema({
   boysVoted: { type: Number, default: 0 },
   girlsVoted: { type: Number, default: 0 },
   departmentStats: { type: Map, of: Number, default: {} },
+  createdBy: { type: String, required: true }, // Track admin who created it
+  votedStudents: [{ type: String }], // Track student IDs who voted
 });
 
 const Election = mongoose.model('Election', electionSchema);
