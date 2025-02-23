@@ -1,22 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-function StudentPage() {
-  const records = [
-    {
-      id: 1,
-      studentName: "John Smith",
-      reason: "Using unauthorized materials during final exam",
-      punishment: "F grade in course, academic probation",
-      date: "2024-03-15"
-    },
-    {
-      id: 2,
-      studentName: "Sarah Johnson",
-      reason: "Plagiarism in research paper",
-      punishment: "Zero on assignment, ethics course requirement",
-      date: "2024-03-10"
-    }
-  ];
+function StudentViolationPage() {
+  const [violations, setViolations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchViolations = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/v1/students/violations'); // Updated URL
+        if (!response.ok) {
+          throw new Error('Failed to fetch violations');
+        }
+        const data = await response.json();
+        setViolations(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchViolations();
+  }, []);
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-500">Error: {error}</div>;
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -35,10 +49,14 @@ function StudentPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {records.map((record, index) => (
-              <tr key={record.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="px-6 py-4 text-sm text-gray-500">{record.date}</td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{record.studentName}</td>
+            {violations.map((record) => (
+              <tr key={record._id} className={violations.indexOf(record) % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {new Date(record.date).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  {record.studentName}
+                </td>
                 <td className="px-6 py-4 text-sm text-gray-500">{record.reason}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">{record.punishment}</td>
               </tr>
@@ -50,4 +68,4 @@ function StudentPage() {
   );
 }
 
-export default StudentPage;
+export default StudentViolationPage;
