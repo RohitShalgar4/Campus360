@@ -1,24 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 
-function AdminPage() {
-  const [records, setRecords] = useState([
-    {
-      id: 1,
-      studentName: "John Smith",
-      reason: "Using unauthorized materials during final exam",
-      punishment: "F grade in course, academic probation",
-      date: "2024-03-15"
-    },
-    {
-      id: 2,
-      studentName: "Sarah Johnson",
-      reason: "Plagiarism in research paper",
-      punishment: "Zero on assignment, ethics course requirement",
-      date: "2024-03-10"
-    }
-  ]);
-  
+function AdminViolation() {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [newRecord, setNewRecord] = useState({
     studentName: '',
     reason: '',
@@ -26,16 +13,63 @@ function AdminPage() {
     date: new Date().toISOString().split('T')[0]
   });
 
-  const handleSubmit = (e) => {
+  // Fetch all violations from the backend
+  useEffect(() => {
+    const fetchViolations = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/v1/students/violations'); // Updated URL
+        if (!response.ok) {
+          throw new Error('Failed to fetch violations');
+        }
+        const data = await response.json();
+        setRecords(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchViolations();
+  }, []);
+
+  // Handle form submission to create a new violation
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setRecords([...records, { ...newRecord, id: records.length + 1 }]);
-    setNewRecord({
-      studentName: '',
-      reason: '',
-      punishment: '',
-      date: new Date().toISOString().split('T')[0]
-    });
+
+    try {
+      const response = await fetch('http://localhost:8080/api/v1/students/violations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newRecord),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create violation');
+      }
+
+      const data = await response.json();
+      setRecords([...records, data]); // Add the new violation to the list
+      setNewRecord({
+        studentName: '',
+        reason: '',
+        punishment: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+    } catch (err) {
+      setError(err.message);
+    }
   };
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-500">Error: {error}</div>;
+  }
 
   return (
     <>
@@ -112,8 +146,8 @@ function AdminPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {records.map((record, index) => (
-                <tr key={record.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-6 py-4 text-sm text-gray-500">{record.date}</td>
+                <tr key={record._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(record.date).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{record.studentName}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{record.reason}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{record.punishment}</td>
@@ -127,4 +161,4 @@ function AdminPage() {
   );
 }
 
-export default AdminPage;
+export default AdminViolation;
