@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { Calendar, Users, BookOpen, FileText, PieChart, MessageSquare } from 'lucide-react';
 
 function StudentDashboard() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   const stats = [
     { name: 'Active Elections', value: '2', icon: Users },
@@ -13,6 +15,34 @@ function StudentDashboard() {
     { name: 'Budget Utilization', value: '75%', icon: PieChart },
     { name: 'Active Complaints', value: '3', icon: MessageSquare },
   ];
+
+  const quickActions = [
+    { 
+      name: 'Book Facility', 
+      path: '/facilities',
+      bgColor: 'bg-indigo-50',
+      hoverColor: 'hover:bg-indigo-100',
+      textColor: 'text-indigo-700'
+    },  
+    { 
+      name: 'File Complaint', 
+      path: '/complaints',
+      bgColor: 'bg-indigo-50',
+      hoverColor: 'hover:bg-indigo-100',
+      textColor: 'text-indigo-700'
+    },
+    { 
+      name: 'View Budget', 
+      path: '/budget',
+      bgColor: 'bg-indigo-50',
+      hoverColor: 'hover:bg-indigo-100',
+      textColor: 'text-indigo-700'
+    }
+  ];
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
 
   return (
     <div className="space-y-6">
@@ -56,18 +86,18 @@ function StudentDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-4">
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
-              Book Facility
-            </button>
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
-              Submit Application
-            </button>
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
-              File Complaint
-            </button>
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
-              View Budget
-            </button>
+            {quickActions.map((action) => (
+              <button
+                key={action.name}
+                onClick={() => handleNavigation(action.path)}
+                className={`p-4 rounded-lg transition-colors duration-200 
+                  ${action.bgColor} ${action.textColor} ${action.hoverColor}
+                  flex items-center justify-center text-center
+                  focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50`}
+              >
+                {action.name}
+              </button>
+            ))}
           </div>
         </div>
       </div>

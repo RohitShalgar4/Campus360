@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { Users, Calendar, FileText, AlertTriangle, DollarSign, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+  
+  // State for modal visibility
+  const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isDoctorModalOpen, setIsDoctorModalOpen] = useState(false);
 
   const stats = [
     { name: 'Total Students', value: '1,234', icon: Users },
@@ -20,6 +27,28 @@ function AdminDashboard() {
     { id: 3, type: 'Budget', title: 'Sports Department Budget Request', status: 'Under Review', time: '1 hour ago' },
     { id: 4, type: 'Election', title: 'Student Council Election Started', status: 'Active', time: '2 hours ago' },
   ];
+
+  const handleBudgetClick = () => {
+    navigate('/budget'); // Navigate to budget page
+  };
+
+  const handleStudentSubmit = (e) => {
+    e.preventDefault();
+    // Add student submission logic here
+    setIsStudentModalOpen(false);
+  };
+
+  const handleAdminSubmit = (e) => {
+    e.preventDefault();
+    // Add admin submission logic here
+    setIsAdminModalOpen(false);
+  };
+
+  const handleDoctorSubmit = (e) => {
+    e.preventDefault();
+    // Add doctor submission logic here
+    setIsDoctorModalOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -70,17 +99,268 @@ function AdminDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-4">
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
-              Manage Elections
-            </button>
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
-              Review Applications
-            </button>
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
-              Moderate Complaints
-            </button>
-            <button className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100">
+            {/* Student Modal */}
+            {isStudentModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Add New Student</h3>
+                    <button 
+                      onClick={() => setIsStudentModalOpen(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <form onSubmit={handleStudentSubmit} className="space-y-4">
+                    <input 
+                      type="text" 
+                      placeholder="Full Name" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="email" 
+                      placeholder="Email" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="password" 
+                      placeholder="Password" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="tel" 
+                      placeholder="Mobile Number" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="email" 
+                      placeholder="Parent Email" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Student ID" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <select className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                      <option value="">Select Class</option>
+                      {["1st", "2nd", "3rd", "4th"].map(cls => (
+                        <option key={cls} value={cls}>{cls}</option>
+                      ))}
+                    </select>
+                    <input 
+                      type="text" 
+                      placeholder="Department" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Passout Year" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <select className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                      <option value="">Select Gender</option>
+                      {["Male", "Female", "Other"].map(gender => (
+                        <option key={gender} value={gender}>{gender}</option>
+                      ))}
+                    </select>
+                    <div className="flex justify-end space-x-2">
+                      <button 
+                        type="button"
+                        onClick={() => setIsStudentModalOpen(false)}
+                        className="px-4 py-2 border rounded hover:bg-gray-100"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >
+                        Add Student
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Admin Modal */}
+            {isAdminModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Add New Admin</h3>
+                    <button 
+                      onClick={() => setIsAdminModalOpen(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <form onSubmit={handleAdminSubmit} className="space-y-4">
+                    <input 
+                      type="text" 
+                      placeholder="Full Name" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="email" 
+                      placeholder="Email" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="password" 
+                      placeholder="Password" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="tel" 
+                      placeholder="Mobile Number" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Designation" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <select className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                      <option value="">Select Gender</option>
+                      {["Male", "Female", "Other"].map(gender => (
+                        <option key={gender} value={gender}>{gender}</option>
+                      ))}
+                    </select>
+                    <div className="flex justify-end space-x-2">
+                      <button 
+                        type="button"
+                        onClick={() => setIsAdminModalOpen(false)}
+                        className="px-4 py-2 border rounded hover:bg-gray-100"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >
+                        Add Admin
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Doctor Modal */}
+            {isDoctorModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Add New Doctor</h3>
+                    <button 
+                      onClick={() => setIsDoctorModalOpen(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <form onSubmit={handleDoctorSubmit} className="space-y-4">
+                    <input 
+                      type="text" 
+                      placeholder="Full Name" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="email" 
+                      placeholder="Email" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="password" 
+                      placeholder="Password" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="tel" 
+                      placeholder="Mobile Number" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Qualification" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Years of Practice" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <select className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                      <option value="">Select Gender</option>
+                      {["Male", "Female", "Other"].map(gender => (
+                        <option key={gender} value={gender}>{gender}</option>
+                      ))}
+                    </select>
+                    <div className="flex justify-end space-x-2">
+                      <button 
+                        type="button"
+                        onClick={() => setIsDoctorModalOpen(false)}
+                        className="px-4 py-2 border rounded hover:bg-gray-100"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >
+                        Add Doctor
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            <button 
+              className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100"
+              onClick={handleBudgetClick}
+            >
               Manage Budget
+            </button>
+            <button 
+              className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100"
+              onClick={() => setIsStudentModalOpen(true)}
+            >
+              Add Student
+            </button>
+            <button 
+              className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100"
+              onClick={() => setIsAdminModalOpen(true)}
+            >
+              Add Admin
+            </button>
+            <button 
+              className="p-4 bg-indigo-50 rounded-lg text-indigo-700 hover:bg-indigo-100"
+              onClick={() => setIsDoctorModalOpen(true)}
+            >
+              Add Doctor
             </button>
           </div>
         </div>

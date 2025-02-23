@@ -115,7 +115,7 @@ function Navbar() {
               </Link>
 
               {/* Dropdown for Approval Portal */}
-              {role === "admin" && (
+              {role === "admin" || role === "student" && (
                 <div className="relative group">
                   <button className="hover:text-indigo-200">
                     Approval Portal
