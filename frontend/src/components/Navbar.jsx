@@ -56,7 +56,7 @@ function Navbar() {
           </Link>
 
           {/* Navigation Links */}
-          {isAuthenticated && (
+          {isAuthenticated && role !== "doctor" && (
             <div className="hidden md:flex space-x-8">
               <Link
                 to="/elections"

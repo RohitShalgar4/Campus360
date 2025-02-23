@@ -1,33 +1,39 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import Navbar from './components/Navbar';
-import Login from './pages/Login';
-import StudentDashboard from './pages/student/StudentDashboard';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ProtectedRoute from './components/ProtectedRoute';
-import { useAuthStore } from './stores/authStore';
-import StudentComplaints from './pages/student/StudentComplaints';
-import AdminComplaints from './pages/admin/AdminComplaints';
-import StudentBudget from './pages/student/StudentBudget';
-import AdminBudget from './pages/admin/AdminBudget';
-import StudentElections from './pages/student/StudentElections';
-import AdminElections from './pages/admin/AdminElections';
-import StudentFacilities from './pages/student/StudentFacilities';
-import AdminFacilities from './pages/admin/AdminFacilities';
-import LandingPage from './components/LandingPage';
-import Applications from './pages/admin/AdminApprovalApplication';
-import AdminApprovalDashboard from './pages/admin/AdminApprovalDashboard';
-import SubmitApplication from './pages/student/StudentApprovalSubmit';
-import ApplicationDetails from './pages/admin/AdminApprovalApplicationDetails';
-import AdminViolation from './pages/admin/AdminViolation';
-import StudentViolation from './pages/student/StudentViolation';
-import { Shield, LogOut } from 'lucide-react';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import Navbar from "./components/Navbar";
+import Login from "./pages/Login";
+import StudentDashboard from "./pages/student/StudentDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { useAuthStore } from "./stores/authStore";
+import StudentComplaints from "./pages/student/StudentComplaints";
+import AdminComplaints from "./pages/admin/AdminComplaints";
+import StudentBudget from "./pages/student/StudentBudget";
+import AdminBudget from "./pages/admin/AdminBudget";
+import StudentElections from "./pages/student/StudentElections";
+import AdminElections from "./pages/admin/AdminElections";
+import StudentFacilities from "./pages/student/StudentFacilities";
+import AdminFacilities from "./pages/admin/AdminFacilities";
+import LandingPage from "./components/LandingPage";
+import Applications from "./pages/admin/AdminApprovalApplication";
+import AdminApprovalDashboard from "./pages/admin/AdminApprovalDashboard";
+import SubmitApplication from "./pages/student/StudentApprovalSubmit";
+import ApplicationDetails from "./pages/admin/AdminApprovalApplicationDetails";
+import AdminViolation from "./pages/admin/AdminViolation";
+import StudentViolation from "./pages/student/StudentViolation";
+import { Shield, LogOut } from "lucide-react";
+import DoctorDashboard from "./pages/admin/DoctorDashboard";
 
 // Academic Integrity System Component
 const AcademicIntegritySystem = () => {
   const { role } = useAuthStore();
-  const isAdmin = role === 'admin';
+  const isAdmin = role === "admin";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,7 +66,13 @@ function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  {role === 'admin' ? <AdminDashboard /> : <StudentDashboard />}
+                  {role === "admin" ? (
+                    <AdminDashboard />
+                  ) : role === "doctor" ? (
+                    <DoctorDashboard />
+                  ) : (
+                    <StudentDashboard />
+                  )}
                 </ProtectedRoute>
               }
             />
@@ -70,7 +82,13 @@ function App() {
               path="/elections"
               element={
                 <ProtectedRoute>
-                  {role === 'admin' ? <AdminElections /> : <StudentElections />}
+                  {role === "admin" ? (
+                    <AdminElections />
+                  ) : role === "student" ? (
+                    <StudentElections />
+                  ) : (
+                    <Navigate to="/" />
+                  )}
                 </ProtectedRoute>
               }
             />
@@ -80,7 +98,13 @@ function App() {
               path="/facilities"
               element={
                 <ProtectedRoute>
-                  {role === 'admin' ? <AdminFacilities /> : <StudentFacilities />}
+                  {role === "admin" ? (
+                    <AdminFacilities />
+                  ) : role === "student" ? (
+                    <StudentFacilities />
+                  ) : (
+                    <Navigate to="/" />
+                  )}
                 </ProtectedRoute>
               }
             />
@@ -90,17 +114,28 @@ function App() {
               path="/complaints"
               element={
                 <ProtectedRoute>
-                  {role === 'admin' ? <AdminComplaints /> : <StudentComplaints />}
+                  {role === "admin" ? (
+                    <AdminComplaints />
+                  ) : role === "student" ? (
+                    <StudentComplaints />
+                  ) : (
+                    <Navigate to="/" />
+                  )}
                 </ProtectedRoute>
               }
             />
 
-            {/* Budget Page (Admin Only) */}
             <Route
               path="/budget"
               element={
                 <ProtectedRoute>
-                  {role === 'admin' ? <AdminBudget /> : <StudentBudget />}
+                  {role === "admin" ? (
+                    <AdminBudget />
+                  ) : role === "student" ? (
+                    <StudentBudget />
+                  ) : (
+                    <Navigate to="/" />
+                  )}
                 </ProtectedRoute>
               }
             />
@@ -109,7 +144,7 @@ function App() {
             <Route
               path="/approvaldashboard"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <AdminApprovalDashboard />
                 </ProtectedRoute>
               }
@@ -117,7 +152,7 @@ function App() {
             <Route
               path="/applications"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <Applications />
                 </ProtectedRoute>
               }
@@ -125,7 +160,7 @@ function App() {
             <Route
               path="/applications/:id"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <ApplicationDetails />
                 </ProtectedRoute>
               }
@@ -133,7 +168,7 @@ function App() {
             <Route
               path="/submit"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <SubmitApplication />
                 </ProtectedRoute>
               }
@@ -144,7 +179,11 @@ function App() {
               path="/academic-integrity"
               element={
                 <ProtectedRoute>
-                  <AcademicIntegritySystem />
+                  {role !== "doctor" ? (
+                    <AcademicIntegritySystem />
+                  ) : (
+                    <Navigate to="/" />
+                  )}
                 </ProtectedRoute>
               }
             />
