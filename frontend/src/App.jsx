@@ -144,7 +144,7 @@ function App() {
             <Route
               path="/approvaldashboard"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["admin" ,"student"]}>
                   <AdminApprovalDashboard />
                 </ProtectedRoute>
               }
@@ -168,7 +168,7 @@ function App() {
             <Route
               path="/submit"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["admin","student"]}>
                   <SubmitApplication />
                 </ProtectedRoute>
               }

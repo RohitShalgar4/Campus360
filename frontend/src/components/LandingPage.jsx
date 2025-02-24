@@ -117,7 +117,7 @@ function LandingPage() {
                 Your Campus,<br />Your Journey
               </h1>
               <p className="text-xl md:text-2xl mb-8 text-white">
-                Explore, Connect, and Elevate Your College Experience Like Never Before
+              Connecting students with everything their campus offers.
               </p>
               <div className="flex flex-wrap gap-4">
                 <button 

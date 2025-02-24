@@ -12,12 +12,6 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
 
-const approvalNav = [
-  { name: "Approval Dashboard", href: "/approvaldashboard", icon: PieChart },
-  { name: "Applications", href: "/applications", icon: FileText },
-  { name: "Submit", href: "/submit", icon: Building2 },
-];
-
 function Navbar() {
   const { isAuthenticated, logout, role } = useAuthStore();
   const navigate = useNavigate();
@@ -27,6 +21,20 @@ function Navbar() {
     logout();
     navigate("/login");
   };
+
+  // Approval navigation items based on role
+  const approvalNav = role === "admin" 
+    ? [
+        { name: "Approval Dashboard", href: "/approvaldashboard", icon: PieChart },
+        { name: "Applications", href: "/applications", icon: FileText },
+      ]
+    : role === "student"
+    ? [
+        // Students have access to both Approval Dashboard and Submit
+        { name: "Approval Dashboard", href: "/approvaldashboard", icon: PieChart },
+        { name: "Submit", href: "/submit", icon: Building2 },
+      ]
+    : [];
 
   // Dark Mode Persistence
   const [darkMode, setDarkMode] = useState(() => {
@@ -115,7 +123,7 @@ function Navbar() {
               </Link>
 
               {/* Dropdown for Approval Portal */}
-              {role === "admin" || role === "student" && (
+              {(role === "admin" || role === "student") && (
                 <div className="relative group">
                   <button className="hover:text-indigo-200">
                     Approval Portal
