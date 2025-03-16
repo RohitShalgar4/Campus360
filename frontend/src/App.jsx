@@ -27,7 +27,6 @@ import SubmitApplication from "./pages/student/StudentApprovalSubmit";
 import ApplicationDetails from "./pages/admin/AdminApprovalApplicationDetails";
 import AdminViolation from "./pages/admin/AdminViolation";
 import StudentViolation from "./pages/student/StudentViolation";
-import { Shield, LogOut } from "lucide-react";
 import DoctorDashboard from "./pages/admin/DoctorDashboard";
 
 // Academic Integrity System Component
