@@ -66,10 +66,45 @@ export const login = async (req, res) => {
 
 export const logout = (req, res) => {
     try {
-        return res.status(200).cookie("token", "", { maxAge: 0 }).json({
-            message: "logged out successfully."
-        })
+        // Clear the token cookie with all necessary options
+        res.cookie('token', '', {
+            maxAge: 0,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/'
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+        });
     } catch (error) {
-        console.log(error);
+        console.error('Logout error:', error);
+        return res.status(500).json({
+            success: false,
+            message: "Error during logout"
+        });
+    }
+};
+
+export const validateToken = async (req, res) => {
+    try {
+        // If we reach here, it means the token is valid (checked by authenticateToken middleware)
+        // We can optionally fetch fresh user data here if needed
+        return res.status(200).json({
+            success: true,
+            message: 'Token is valid',
+            user: {
+                id: req.user.id,
+                role: req.user.role
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(401).json({
+            success: false,
+            message: 'Invalid token'
+        });
     }
 };
