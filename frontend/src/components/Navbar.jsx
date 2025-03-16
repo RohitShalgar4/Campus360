@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import {
   Building2,
   FileText,
@@ -11,15 +12,33 @@ import {
   Shield,
 } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
+import toast from "react-hot-toast";
 
 function Navbar() {
-  const { isAuthenticated, logout, role } = useAuthStore();
+  const { isAuthenticated, logout, role, token } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      // Call backend logout endpoint to clear cookies
+      await axios.get('http://localhost:8080/api/v1/auth/logout', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        withCredentials: true
+      });
+      
+      // Clear frontend state
+      logout();
+      navigate("/login");
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear frontend state even if backend call fails
+      logout();
+      navigate("/login");
+    }
   };
 
   // Approval navigation items based on role
