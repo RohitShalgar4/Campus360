@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
@@ -45,7 +46,21 @@ const AcademicIntegritySystem = () => {
 
 // Main App component
 function App() {
-  const { role } = useAuthStore();
+  const { role, isAuthenticated, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    // Validate authentication on app initialization
+    checkAuth();
+  }, []);
+
+  // Redirect unauthenticated users to login
+  const RequireAuth = ({ children }) => {
+    const location = useLocation();
+    if (!isAuthenticated) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+    return children;
+  };
 
   return (
     <Router>
@@ -54,25 +69,32 @@ function App() {
         <Navbar />
         <main className="container mx-auto px-4 py-8">
           <Routes>
-            {/* Public Route: Landing Page (Default Route) */}
+            {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
-
-            {/* Public Route: Login Page */}
-            <Route path="/login" element={<Login />} />
+            <Route 
+              path="/login" 
+              element={
+                isAuthenticated ? 
+                <Navigate to="/dashboard" replace /> : 
+                <Login />
+              } 
+            />
 
             {/* Protected Routes */}
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
-                  {role === "admin" ? (
-                    <AdminDashboard />
-                  ) : role === "doctor" ? (
-                    <DoctorDashboard />
-                  ) : (
-                    <StudentDashboard />
-                  )}
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute>
+                    {role === "admin" ? (
+                      <AdminDashboard />
+                    ) : role === "doctor" ? (
+                      <DoctorDashboard />
+                    ) : (
+                      <StudentDashboard />
+                    )}
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
 
@@ -80,15 +102,17 @@ function App() {
             <Route
               path="/elections"
               element={
-                <ProtectedRoute>
-                  {role === "admin" ? (
-                    <AdminElections />
-                  ) : role === "student" ? (
-                    <StudentElections />
-                  ) : (
-                    <Navigate to="/" />
-                  )}
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute>
+                    {role === "admin" ? (
+                      <AdminElections />
+                    ) : role === "student" ? (
+                      <StudentElections />
+                    ) : (
+                      <Navigate to="/" />
+                    )}
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
 
@@ -96,15 +120,17 @@ function App() {
             <Route
               path="/facilities"
               element={
-                <ProtectedRoute>
-                  {role === "admin" ? (
-                    <AdminFacilities />
-                  ) : role === "student" ? (
-                    <StudentFacilities />
-                  ) : (
-                    <Navigate to="/" />
-                  )}
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute>
+                    {role === "admin" ? (
+                      <AdminFacilities />
+                    ) : role === "student" ? (
+                      <StudentFacilities />
+                    ) : (
+                      <Navigate to="/" />
+                    )}
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
 
@@ -112,30 +138,34 @@ function App() {
             <Route
               path="/complaints"
               element={
-                <ProtectedRoute>
-                  {role === "admin" ? (
-                    <AdminComplaints />
-                  ) : role === "student" ? (
-                    <StudentComplaints />
-                  ) : (
-                    <Navigate to="/" />
-                  )}
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute>
+                    {role === "admin" ? (
+                      <AdminComplaints />
+                    ) : role === "student" ? (
+                      <StudentComplaints />
+                    ) : (
+                      <Navigate to="/" />
+                    )}
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
 
             <Route
               path="/budget"
               element={
-                <ProtectedRoute>
-                  {role === "admin" ? (
-                    <AdminBudget />
-                  ) : role === "student" ? (
-                    <StudentBudget />
-                  ) : (
-                    <Navigate to="/" />
-                  )}
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute>
+                    {role === "admin" ? (
+                      <AdminBudget />
+                    ) : role === "student" ? (
+                      <StudentBudget />
+                    ) : (
+                      <Navigate to="/" />
+                    )}
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
 
@@ -143,33 +173,41 @@ function App() {
             <Route
               path="/approvaldashboard"
               element={
-                <ProtectedRoute allowedRoles={["admin" ,"student"]}>
-                  <AdminApprovalDashboard />
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute allowedRoles={["admin" ,"student"]}>
+                    <AdminApprovalDashboard />
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
             <Route
               path="/applications"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <Applications />
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Applications />
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
             <Route
               path="/applications/:id"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <ApplicationDetails />
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <ApplicationDetails />
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
             <Route
               path="/submit"
               element={
-                <ProtectedRoute allowedRoles={["admin","student"]}>
-                  <SubmitApplication />
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute allowedRoles={["admin","student"]}>
+                    <SubmitApplication />
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
 
@@ -177,13 +215,15 @@ function App() {
             <Route
               path="/academic-integrity"
               element={
-                <ProtectedRoute>
-                  {role !== "doctor" ? (
-                    <AcademicIntegritySystem />
-                  ) : (
-                    <Navigate to="/" />
-                  )}
-                </ProtectedRoute>
+                <RequireAuth>
+                  <ProtectedRoute>
+                    {role !== "doctor" ? (
+                      <AcademicIntegritySystem />
+                    ) : (
+                      <Navigate to="/" />
+                    )}
+                  </ProtectedRoute>
+                </RequireAuth>
               }
             />
 
