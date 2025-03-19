@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { DollarSign, TrendingUp, PieChart, FileText, X } from 'lucide-react';
+import { DollarSign, TrendingUp, PieChart, FileText, X, Image, Edit2, Check, Trash2 } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AdminBudget = () => {
   const [budgetCategories, setBudgetCategories] = useState([
@@ -10,9 +12,9 @@ const AdminBudget = () => {
       spent: 32000,
       remaining: 18000,
       expenses: [
-        { id: 1, description: 'Annual Cultural Fest', amount: 15000, date: '2024-02-15' },
-        { id: 2, description: 'Sports Tournament', amount: 12000, date: '2024-03-01' },
-        { id: 3, description: 'Club Activities', amount: 5000, date: '2024-03-10' }
+        { id: 1, description: 'Annual Cultural Fest', amount: 15000, date: '2024-02-15', billImage: null },
+        { id: 2, description: 'Sports Tournament', amount: 12000, date: '2024-03-01', billImage: null },
+        { id: 3, description: 'Club Activities', amount: 5000, date: '2024-03-10', billImage: null }
       ]
     },
     {
@@ -22,19 +24,51 @@ const AdminBudget = () => {
       spent: 75000,
       remaining: 25000,
       expenses: [
-        { id: 4, description: 'Library Renovation', amount: 45000, date: '2024-01-20' },
-        { id: 5, description: 'Computer Lab Upgrade', amount: 30000, date: '2024-02-05' }
+        { id: 4, description: 'Library Renovation', amount: 45000, date: '2024-01-20', billImage: null },
+        { id: 5, description: 'Computer Lab Upgrade', amount: 30000, date: '2024-02-05', billImage: null }
       ]
     }
   ]);
 
   const [showModal, setShowModal] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [newExpense, setNewExpense] = useState({
-    description: '',
-    amount: '',
-    date: ''
-  });
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [newExpenses, setNewExpenses] = useState({});
+  const [formErrors, setFormErrors] = useState({});
+
+  const getNewExpense = (categoryId) => {
+    return newExpenses[categoryId] || {
+      description: '',
+      amount: '',
+      date: '',
+      billImage: null
+    };
+  };
+
+  const updateNewExpense = (categoryId, updates) => {
+    setNewExpenses(prev => ({
+      ...prev,
+      [categoryId]: {
+        ...getNewExpense(categoryId),
+        ...updates
+      }
+    }));
+    // Clear any errors when user makes changes
+    setFormErrors({});
+  };
+
+  const validateExpenseForm = (expense) => {
+    const errors = {};
+    if (!expense.description) errors.description = 'Description is required';
+    if (!expense.amount) errors.amount = 'Amount is required';
+    if (!expense.date) errors.date = 'Date is required';
+    if (!expense.billImage) errors.billImage = 'Bill image is required';
+    return errors;
+  };
 
   const totalBudget = budgetCategories.reduce((sum, cat) => sum + cat.allocated, 0);
   const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
@@ -77,17 +111,24 @@ const AdminBudget = () => {
   };
 
   const handleAddExpense = (categoryId) => {
-    if (!newExpense.description || !newExpense.amount || !newExpense.date) return;
+    const expense = getNewExpense(categoryId);
+    const errors = validateExpenseForm(expense);
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Please fill all required fields including bill image');
+      return;
+    }
 
     setBudgetCategories(prev => {
       return prev.map(category => {
         if (category.id === categoryId) {
-          const expense = {
+          const newExpense = {
             id: Date.now(),
-            ...newExpense,
-            amount: parseFloat(newExpense.amount)
+            ...expense,
+            amount: parseFloat(expense.amount)
           };
-          const updatedExpenses = [...category.expenses, expense];
+          const updatedExpenses = [...category.expenses, newExpense];
           const spent = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
           
           return {
@@ -101,15 +142,122 @@ const AdminBudget = () => {
       });
     });
 
-    setNewExpense({ description: '', amount: '', date: '' });
+    // Clear only the form for this specific category
+    updateNewExpense(categoryId, {
+      description: '',
+      amount: '',
+      date: '',
+      billImage: null
+    });
+    
+    toast.success('Expense added successfully!');
+  };
+
+  const handleEditExpense = (categoryId, expense) => {
+    setEditingExpense({ ...expense, categoryId });
+    updateNewExpense(categoryId, expense);
+  };
+
+  const handleUpdateExpense = (categoryId) => {
+    const updatedExpense = getNewExpense(categoryId);
+    const errors = validateExpenseForm(updatedExpense);
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Please fill all required fields including bill image');
+      return;
+    }
+
+    setBudgetCategories(prev => {
+      return prev.map(category => {
+        if (category.id === categoryId) {
+          const updatedExpenses = category.expenses.map(exp => 
+            exp.id === editingExpense.id 
+              ? { ...exp, ...updatedExpense, amount: parseFloat(updatedExpense.amount) }
+              : exp
+          );
+          const spent = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          return {
+            ...category,
+            expenses: updatedExpenses,
+            spent,
+            remaining: category.allocated - spent
+          };
+        }
+        return category;
+      });
+    });
+
+    setEditingExpense(null);
+    updateNewExpense(categoryId, {
+      description: '',
+      amount: '',
+      date: '',
+      billImage: null
+    });
+    
+    toast.success('Expense updated successfully!');
+  };
+
+  const handleBillUpload = (categoryId, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateNewExpense(categoryId, { billImage: reader.result });
+        toast.success('Bill image uploaded successfully!');
+      };
+      reader.onerror = () => {
+        toast.error('Failed to upload bill image');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleViewBill = (bill) => {
+    setSelectedBill(bill);
+    setShowBillModal(true);
   };
 
   const handleDeleteCategory = (id) => {
     setBudgetCategories(prev => prev.filter(category => category.id !== id));
   };
 
+  const handleDeleteExpense = (categoryId, expense) => {
+    setExpenseToDelete({ ...expense, categoryId });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteExpense = () => {
+    const { categoryId, id } = expenseToDelete;
+    
+    setBudgetCategories(prev => {
+      return prev.map(category => {
+        if (category.id === categoryId) {
+          const updatedExpenses = category.expenses.filter(exp => exp.id !== id);
+          const spent = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          return {
+            ...category,
+            expenses: updatedExpenses,
+            spent,
+            remaining: category.allocated - spent
+          };
+        }
+        return category;
+      });
+    });
+
+    setShowDeleteModal(false);
+    setExpenseToDelete(null);
+    toast.success('Expense deleted successfully!');
+  };
+
   return (
     <div className="space-y-6">
+      <ToastContainer position="top-right" autoClose={3000} />
+      
       {/* Header */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold text-gray-900">Budget Management</h1>
@@ -186,34 +334,93 @@ const AdminBudget = () => {
                 </div>
               </div>
 
-              {/* Add Expense Form */}
-              <div className="mt-6 flex space-x-4">
-                <input
-                  type="text"
-                  placeholder="Description"
-                  className="flex-1 px-4 py-2 border rounded-lg"
-                  value={newExpense.description}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))}
-                />
-                <input
-                  type="number"
-                  placeholder="Amount"
-                  className="w-32 px-4 py-2 border rounded-lg"
-                  value={newExpense.amount}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))}
-                />
-                <input
-                  type="date"
-                  className="w-40 px-4 py-2 border rounded-lg"
-                  value={newExpense.date}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, date: e.target.value }))}
-                />
-                <button
-                  onClick={() => handleAddExpense(category.id)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Add Expense
-                </button>
+              {/* Add/Edit Expense Form */}
+              <div className="mt-6 space-y-4">
+                <div className="flex space-x-4">
+                  <input
+                    type="text"
+                    placeholder="Description"
+                    className={`flex-1 px-4 py-2 border rounded-lg ${
+                      formErrors.description ? 'border-red-500' : ''
+                    }`}
+                    value={getNewExpense(category.id).description}
+                    onChange={(e) => updateNewExpense(category.id, { description: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    className={`w-32 px-4 py-2 border rounded-lg ${
+                      formErrors.amount ? 'border-red-500' : ''
+                    }`}
+                    value={getNewExpense(category.id).amount}
+                    onChange={(e) => updateNewExpense(category.id, { amount: e.target.value })}
+                  />
+                  <input
+                    type="date"
+                    className={`w-40 px-4 py-2 border rounded-lg ${
+                      formErrors.date ? 'border-red-500' : ''
+                    }`}
+                    value={getNewExpense(category.id).date}
+                    onChange={(e) => updateNewExpense(category.id, { date: e.target.value })}
+                  />
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id={`billUpload-${category.id}`}
+                      onChange={(e) => handleBillUpload(category.id, e)}
+                    />
+                    <label
+                      htmlFor={`billUpload-${category.id}`}
+                      className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer flex items-center ${
+                        formErrors.billImage ? 'ring-2 ring-red-500' : ''
+                      }`}
+                    >
+                      <Image className="h-4 w-4 mr-2" />
+                      {getNewExpense(category.id).billImage ? 'Change Bill' : 'Upload Bill'}
+                    </label>
+                  </div>
+                  {editingExpense?.categoryId === category.id ? (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleUpdateExpense(category.id)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Update
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingExpense(null);
+                          updateNewExpense(category.id, {
+                            description: '',
+                            amount: '',
+                            date: '',
+                            billImage: null
+                          });
+                        }}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleAddExpense(category.id)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      Add Expense
+                    </button>
+                  )}
+                </div>
+                {Object.keys(formErrors).length > 0 && (
+                  <div className="text-red-500 text-sm mt-2">
+                    {Object.values(formErrors).map((error, index) => (
+                      <div key={index}>{error}</div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -231,11 +438,19 @@ const AdminBudget = () => {
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
                     </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Bill
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {category.expenses.map((expense) => (
-                    <tr key={expense.id}>
+                    <tr key={expense.id} className={`transition-colors duration-200 ${
+                      editingExpense?.id === expense.id ? 'bg-blue-50' : ''
+                    }`}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {expense.description}
                       </td>
@@ -244,6 +459,34 @@ const AdminBudget = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                         ₹{expense.amount.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        {expense.billImage && (
+                          <button
+                            onClick={() => handleViewBill(expense)}
+                            className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors duration-200"
+                          >
+                            View Bill
+                          </button>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <div className="flex items-center justify-center space-x-3">
+                          <button
+                            onClick={() => handleEditExpense(category.id, expense)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                            title="Edit"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExpense(category.id, expense)}
+                            className="text-red-600 hover:text-red-800 transition-colors duration-200"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -305,6 +548,64 @@ const AdminBudget = () => {
                   Save
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill View Modal */}
+      {showBillModal && selectedBill && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Bill Image</h3>
+              <button
+                onClick={() => {
+                  setShowBillModal(false);
+                  setSelectedBill(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="relative">
+              <img
+                src={selectedBill.billImage}
+                alt="Bill"
+                className="w-full h-auto rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-105"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && expenseToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Delete Expense</h3>
+              <p className="mt-2 text-gray-600">
+                Are you sure you want to delete the expense "{expenseToDelete.description}"? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setExpenseToDelete(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              >
+                No, Cancel
+              </button>
+              <button
+                onClick={confirmDeleteExpense}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
+              >
+                Yes, Delete
+              </button>
             </div>
           </div>
         </div>
