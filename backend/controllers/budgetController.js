@@ -2,6 +2,7 @@ import Budget from "../models/budgetModel.js";
 import { uploadMedia, deleteMedia } from "../config/cloudinary.js";
 import { Student } from "../models/studentModel.js";
 import { updateCategorySpent } from "./budgetCategoryController.js";
+import BudgetCategory from "../models/budgetCategoryModel.js";
 
 // Validate file type and size
 const validateFile = (file) => {
@@ -134,19 +135,43 @@ export const addExpense = async (req, res) => {
 // Get all expenses
 export const getAllExpenses = async (req, res) => {
     try {
-        const expenses = await Budget.find()
-            .populate("addedBy", "name email")
-            .sort({ createdAt: -1 });
+        const expenses = await Budget.find().sort({ date: -1 });
+        
+        // Get category allocations
+        const categories = await BudgetCategory.find();
+        const categoryMap = {};
+        categories.forEach(category => {
+            categoryMap[category.name] = {
+                allocated: category.allocated,
+                spent: category.spent,
+                remaining: category.remaining
+            };
+        });
+
+        // Add category data to each expense
+        const expensesWithCategory = expenses.map(expense => {
+            const categoryData = categoryMap[expense.category] || {
+                allocated: 0,
+                spent: 0,
+                remaining: 0
+            };
+            return {
+                ...expense.toObject(),
+                allocated: categoryData.allocated,
+                spent: categoryData.spent,
+                remaining: categoryData.remaining
+            };
+        });
 
         res.status(200).json({
             success: true,
-            data: expenses
+            data: expensesWithCategory
         });
     } catch (error) {
         console.error('Error in getAllExpenses:', error);
         res.status(500).json({
             success: false,
-            message: "Error fetching expenses",
+            message: 'Error fetching expenses',
             error: error.message
         });
     }
