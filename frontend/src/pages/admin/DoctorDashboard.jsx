@@ -1,33 +1,39 @@
-import React, { useState } from 'react';
-import { Search, Mail } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Search, Mail } from "lucide-react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 export default function DoctorDashboard() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [studentsData, setstudentsData] = useState([]);
 
-  // Predefined list of students
-  const studentsData = [
-    { _id: '1', name: 'Aarav Sharma', enrollmentNumber: 'STU001' },
-    { _id: '2', name: 'Priya Patel', enrollmentNumber: 'STU002' },
-    { _id: '3', name: 'Rohan Gupta', enrollmentNumber: 'STU003' },
-    { _id: '4', name: 'Sneha Singh', enrollmentNumber: 'STU004' },
-    { _id: '5', name: 'Vikram Iyer', enrollmentNumber: 'STU005' },
-    { _id: '6', name: 'Ananya Nair', enrollmentNumber: 'STU006' },
-    { _id: '7', name: 'Karan Malhotra', enrollmentNumber: 'STU007' },
-    { _id: '8', name: 'Pooja Desai', enrollmentNumber: 'STU008' },
-  ];
-
+  useEffect(() => {
+    const fetchStudents = async () => {
+      const response = await fetch(
+        "http://localhost:8080/api/v1/student/students",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      setstudentsData(data);
+      if (!response.ok) {
+        throw new Error("Failed to submit health checkup");
+      }
+    };
+    fetchStudents();
+  });
   const handleSearch = (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // Filter students based on search term (name or enrollment number)
-    const filteredStudents = studentsData.filter(
-      (student) =>
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.enrollmentNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredStudents = studentsData.filter((student) =>
+      student.full_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     setSearchResults(filteredStudents);
@@ -39,36 +45,42 @@ export default function DoctorDashboard() {
     const formData = new FormData(e.target);
     const healthData = {
       studentId: selectedStudent._id,
-      symptoms: formData.get('symptoms'),
-      diagnosis: formData.get('diagnosis'),
-      recommendations: formData.get('recommendations'),
-      bedRest: formData.get('bedRest') === 'on',
-      leaveRequired: formData.get('leaveRequired') === 'on',
+      symptoms: formData.get("symptoms"),
+      diagnosis: formData.get("diagnosis"),
+      recommendations: formData.get("recommendations"),
+      bedRest: formData.get("bedRest") === "on",
+      leaveRequired: formData.get("leaveRequired") === "on",
     };
 
     try {
-      console.log('Health checkup data:', healthData);
-      // Uncomment and modify the fetch request if you have an actual API endpoint
-      /*
-      const response = await fetch('http://localhost:5000/api/v1/doctor/health-checkup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(healthData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit health checkup');
+      try {
+        const response = await axios.post(
+          `http://localhost:8080/api/v1/notification/send-email-notification`,
+          {
+            className: selectedStudent.class,
+            department: selectedStudent.department,
+            healthData,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.data?.success) {
+          toast.success(response.data.message);
+        } else {
+          toast.error(response.data.message || "Failed to send reset link");
+        }
+      } catch (error) {
+        toast.error("error");
       }
-      */
-
-      alert('Health checkup submitted successfully');
       setSelectedStudent(null);
       e.target.reset();
     } catch (error) {
-      console.error('Error submitting health checkup:', error);
-      alert('An error occurred while submitting the health checkup. Please try again.');
+      alert(
+        "An error occurred while submitting the health checkup. Please try again."
+      );
     }
   };
 
@@ -78,7 +90,9 @@ export default function DoctorDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Search Student by ID or Name</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Search Student by ID or Name
+          </h2>
           <form onSubmit={handleSearch} className="space-y-4">
             <div>
               <input
@@ -88,11 +102,10 @@ export default function DoctorDashboard() {
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  // Real-time filtering as user types
-                  const filtered = studentsData.filter(
-                    (student) =>
-                      student.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
-                      student.enrollmentNumber.toLowerCase().includes(e.target.value.toLowerCase())
+                  const filtered = studentsData.filter((student) =>
+                    student.full_name
+                      .toLowerCase()
+                      .includes(e.target.value.toLowerCase())
                   );
                   setSearchResults(filtered);
                 }}
@@ -105,7 +118,7 @@ export default function DoctorDashboard() {
               disabled={loading}
             >
               <Search className="h-5 w-5" />
-              <span>{loading ? 'Searching...' : 'Search'}</span>
+              <span>{loading ? "Searching..." : "Search"}</span>
             </button>
           </form>
 
@@ -121,10 +134,11 @@ export default function DoctorDashboard() {
                   <div
                     key={student._id}
                     className="p-4 border-b last:border-b-0 cursor-pointer hover:bg-gray-50"
-                    onClick={() => setSelectedStudent(student)}
+                    onClick={() => {
+                      setSelectedStudent(student);
+                    }}
                   >
-                    <p className="font-medium">{student.name}</p>
-                    <p className="text-sm text-gray-500">{student.enrollmentNumber}</p>
+                    <p className="font-medium">{student.full_name}</p>
                   </div>
                 ))}
               </div>
@@ -137,13 +151,15 @@ export default function DoctorDashboard() {
             <h2 className="text-xl font-semibold mb-4">Health Checkup</h2>
             <form onSubmit={handleHealthCheckup} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Student</label>
-                <p className="mt-1">
-                  {selectedStudent.name} ({selectedStudent.enrollmentNumber})
-                </p>
+                <label className="block text-sm font-medium text-gray-700">
+                  Student
+                </label>
+                <p className="mt-1">{selectedStudent.full_name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Symptoms</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Symptoms
+                </label>
                 <textarea
                   name="symptoms"
                   className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
@@ -151,7 +167,9 @@ export default function DoctorDashboard() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Diagnosis</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Diagnosis
+                </label>
                 <textarea
                   name="diagnosis"
                   className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
@@ -159,7 +177,9 @@ export default function DoctorDashboard() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Recommendations</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Recommendations
+                </label>
                 <textarea
                   name="recommendations"
                   className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
@@ -174,7 +194,10 @@ export default function DoctorDashboard() {
                     name="bedRest"
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="bedRest" className="ml-2 block text-sm text-gray-900">
+                  <label
+                    htmlFor="bedRest"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
                     Bed Rest Required
                   </label>
                 </div>
@@ -185,7 +208,10 @@ export default function DoctorDashboard() {
                     name="leaveRequired"
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="leaveRequired" className="ml-2 block text-sm text-gray-900">
+                  <label
+                    htmlFor="leaveRequired"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
                     Leave Required
                   </label>
                 </div>

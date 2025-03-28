@@ -1,9 +1,10 @@
 import express from "express";
-import { register } from "../controllers/studentController.js";
+import { getAllStudents, register } from "../controllers/studentController.js";
 // import isAuthenticated from "../middleware/isAuthenticated.js";
 
 const router = express.Router();
 
 router.route("/register").post(register);
+router.route("/students").get(getAllStudents);
 
 export default router;
