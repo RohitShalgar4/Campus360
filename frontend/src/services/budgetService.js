@@ -92,8 +92,7 @@ export const getStudentBudget = async () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-      },
-      credentials: 'include'
+      }
     });
 
     if (!response.ok) {
@@ -135,11 +134,31 @@ export const getStudentBudget = async () => {
         categories[expense.category].spent;
     });
 
+    // Ensure all categories have the correct allocated amount
+    const categoryResponse = await fetch(`${API_URL}/budget/categories`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (categoryResponse.ok) {
+      const categoryData = await categoryResponse.json();
+      if (categoryData && categoryData.data) {
+        categoryData.data.forEach(category => {
+          if (categories[category.name]) {
+            categories[category.name].allocated = category.allocated;
+            categories[category.name].remaining = category.allocated - categories[category.name].spent;
+          }
+        });
+      }
+    }
+
     const result = Object.values(categories);
     console.log('Processed budget data:', result); // Debug log
     return { data: result };
   } catch (error) {
-    console.error('Error fetching student budget:', error);
+    console.error('Error in getStudentBudget service:', error);
     throw error;
   }
 }; 
