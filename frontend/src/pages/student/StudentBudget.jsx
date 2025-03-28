@@ -1,38 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, PieChart, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { getStudentBudget } from '../../services/budgetService';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const StudentBudget = () => {
   const [expandedCategory, setExpandedCategory] = useState(null);
+  const [budgetCategories, setBudgetCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const budgetCategories = [
-    {
-      id: 1,
-      name: 'Student Activities',
-      allocated: 50000,
-      spent: 32000,
-      remaining: 18000,
-      expenses: [
-        { id: 1, description: 'Annual Cultural Fest', amount: 15000, date: '2024-02-15' },
-        { id: 2, description: 'Sports Tournament', amount: 12000, date: '2024-03-01' },
-        { id: 3, description: 'Club Activities', amount: 5000, date: '2024-03-10' }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Infrastructure',
-      allocated: 100000,
-      spent: 75000,
-      remaining: 25000,
-      expenses: [
-        { id: 4, description: 'Library Renovation', amount: 45000, date: '2024-01-20' },
-        { id: 5, description: 'Computer Lab Upgrade', amount: 30000, date: '2024-02-05' }
-      ]
+  useEffect(() => {
+    fetchBudgetData();
+  }, []);
+
+  const fetchBudgetData = async () => {
+    try {
+      setLoading(true);
+      const data = await getStudentBudget();
+      setBudgetCategories(data.data);
+    } catch (error) {
+      console.error('Error fetching budget data:', error);
+      toast.error(error.message || 'Failed to fetch budget data');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const totalBudget = budgetCategories.reduce((sum, cat) => sum + cat.allocated, 0);
-  const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
+  const totalBudget = budgetCategories.reduce((sum, cat) => sum + (cat.allocated || 0), 0);
+  const totalSpent = budgetCategories.reduce((sum, cat) => sum + (cat.spent || 0), 0);
   const totalRemaining = totalBudget - totalSpent;
 
   const toggleCategory = (categoryId) => {
@@ -41,13 +37,23 @@ const StudentBudget = () => {
 
   const chartData = budgetCategories.map(category => ({
     name: category.name,
-    Allocated: category.allocated,
-    Spent: category.spent,
-    Remaining: category.remaining
+    Allocated: category.allocated || 0,
+    Spent: category.spent || 0,
+    Remaining: category.remaining || 0
   }));
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <ToastContainer position="top-right" autoClose={3000} />
+      
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold text-gray-900">Budget Overview</h1>
         <p className="mt-2 text-gray-600">View college budget allocations and expenditures</p>
@@ -102,14 +108,14 @@ const StudentBudget = () => {
 
       <div className="space-y-6">
         {budgetCategories.map((category) => (
-          <div key={category.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div key={category._id || category.id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div 
               className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleCategory(category.id)}
+              onClick={() => toggleCategory(category._id || category.id)}
             >
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900">{category.name}</h2>
-                {expandedCategory === category.id ? (
+                {expandedCategory === (category._id || category.id) ? (
                   <ChevronUp className="h-5 w-5 text-gray-500" />
                 ) : (
                   <ChevronDown className="h-5 w-5 text-gray-500" />
@@ -119,25 +125,25 @@ const StudentBudget = () => {
                 <div>
                   <p className="text-sm text-gray-500">Allocated</p>
                   <p className="mt-1 text-lg font-semibold text-green-600">
-                    ₹{category.allocated.toLocaleString()}
+                    ₹{(category.allocated || 0).toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Spent</p>
                   <p className="mt-1 text-lg font-semibold text-blue-600">
-                    ₹{category.spent.toLocaleString()}
+                    ₹{(category.spent || 0).toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Remaining</p>
                   <p className="mt-1 text-lg font-semibold text-yellow-600">
-                    ₹{category.remaining.toLocaleString()}
+                    ₹{(category.remaining || 0).toLocaleString()}
                   </p>
                 </div>
               </div>
             </div>
             
-            {expandedCategory === category.id && (
+            {expandedCategory === (category._id || category.id) && (
               <div className="border-t border-gray-200">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -155,8 +161,8 @@ const StudentBudget = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {category.expenses.map((expense) => (
-                        <tr key={expense.id} className="hover:bg-gray-50">
+                      {(category.expenses || []).map((expense) => (
+                        <tr key={expense._id || expense.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {expense.description}
                           </td>
@@ -168,7 +174,7 @@ const StudentBudget = () => {
                             })}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                            ₹{expense.amount.toLocaleString()}
+                            ₹{(expense.amount || 0).toLocaleString()}
                           </td>
                         </tr>
                       ))}

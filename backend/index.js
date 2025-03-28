@@ -12,6 +12,12 @@ import facilityRoute from "./routes/facilityRoute.js";
 import bookingRoute from "./routes/bookingRoute.js";
 import { electionRouter } from './routes/electionRoutes.js';
 import studentViolationRoute from "./routes/studentViolationRoutes.js";
+import budgetRoute from "./routes/budgetRoute.js";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config({});
 connectDB(); // Connect to the database
@@ -23,6 +29,9 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json()); // Parse JSON request bodies
 app.use(cookieParser()); // Parse cookies
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // CORS Configuration
 const allowedOrigins = ['http://localhost:5173']; // Combined allowed origins
@@ -51,7 +60,8 @@ app.use("/api/v1/facilities", facilityRoute); // Facility routes
 app.use("/api/v1/bookings", bookingRoute);    // Booking routes
 app.use("/api/v1/elections", electionRouter); // Election routes
 app.use("/api/v1/students", studentViolationRoute);
-// app.use("/api/v1/doctor/
+app.use("/api/v1/budget", budgetRoute);       // Budget routes
+
 // Default route
 app.get("/", (req, res) => {
   res.send("Welcome to the Hostel Management System API!");
@@ -59,8 +69,12 @@ app.get("/", (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something went wrong!" });
+  console.error('Error:', err);
+  res.status(500).json({ 
+    success: false,
+    message: "Something went wrong!",
+    error: err.message 
+  });
 });
 
 // Start the server

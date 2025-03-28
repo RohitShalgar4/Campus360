@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const authenticateToken = (req, res, next) => {
+export const authenticateToken = (req, res, next) => {
   const token = req.cookies.token; // Assuming the token is stored in a cookie
 
   console.log("Token from cookie:", token); // Debugging: Log the token
@@ -23,8 +23,19 @@ const authenticateToken = (req, res, next) => {
       role: decoded.role, // Include role for role-based access control
     };
 
+    // Add admin check helper
+    req.isAdmin = () => {
+      return req.user.role === 'admin';
+    };
+
     next();
   });
 };
 
-export default authenticateToken;
+// Admin middleware
+export const isAdmin = (req, res, next) => {
+  if (!req.isAdmin()) {
+    return res.status(403).json({ message: 'Access denied: Admin privileges required' });
+  }
+  next();
+};

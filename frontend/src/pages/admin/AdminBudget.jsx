@@ -1,35 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, PieChart, FileText, X, Image, Edit2, Check, Trash2 } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { addExpense, getAllExpenses, updateExpense, deleteExpense } from '../../services/budgetService';
 
 const AdminBudget = () => {
-  const [budgetCategories, setBudgetCategories] = useState([
-    {
-      id: 1,
-      name: 'Student Activities',
-      allocated: 50000,
-      spent: 32000,
-      remaining: 18000,
-      expenses: [
-        { id: 1, description: 'Annual Cultural Fest', amount: 15000, date: '2024-02-15', billImage: null },
-        { id: 2, description: 'Sports Tournament', amount: 12000, date: '2024-03-01', billImage: null },
-        { id: 3, description: 'Club Activities', amount: 5000, date: '2024-03-10', billImage: null }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Infrastructure',
-      allocated: 100000,
-      spent: 75000,
-      remaining: 25000,
-      expenses: [
-        { id: 4, description: 'Library Renovation', amount: 45000, date: '2024-01-20', billImage: null },
-        { id: 5, description: 'Computer Lab Upgrade', amount: 30000, date: '2024-02-05', billImage: null }
-      ]
-    }
-  ]);
-
+  const [budgetCategories, setBudgetCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -39,12 +15,87 @@ const AdminBudget = () => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [newExpenses, setNewExpenses] = useState({});
   const [formErrors, setFormErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const categories = [
+    "Utilities",
+    "Maintenance",
+    "Supplies",
+    "Salaries",
+    "Academic",
+    "Research",
+    "Student Services",
+    "Library",
+    "Sports",
+    "Events",
+    "Marketing",
+    "IT Services",
+    "Security",
+    "Transportation",
+    "Other"
+  ];
+
+  // Fetch expenses on component mount
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllExpenses();
+      
+      if (!response || !Array.isArray(response)) {
+        console.error('Invalid response format:', response);
+        toast.error('Invalid data received from server');
+        return;
+      }
+
+      // Group expenses by category
+      const groupedExpenses = response.reduce((acc, expense) => {
+        if (!acc[expense.category]) {
+          acc[expense.category] = {
+            id: expense.category,
+            name: expense.category,
+            allocated: expense.allocated || 0,
+            spent: 0,
+            remaining: 0,
+            expenses: []
+          };
+        }
+        acc[expense.category].expenses.push({
+          id: expense._id,
+          title: expense.title || expense.description,
+          description: expense.description,
+          amount: expense.amount,
+          date: new Date(expense.date).toISOString().split('T')[0],
+          billImage: expense.receipt?.url || null
+        });
+        acc[expense.category].spent += expense.amount;
+        return acc;
+      }, {});
+
+      // Convert to array and calculate remaining
+      const categories = Object.values(groupedExpenses).map(category => ({
+        ...category,
+        remaining: category.allocated - category.spent
+      }));
+
+      setBudgetCategories(categories);
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+      toast.error(error.message || 'Failed to fetch expenses');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getNewExpense = (categoryId) => {
     return newExpenses[categoryId] || {
+      title: '',
       description: '',
       amount: '',
-      date: '',
+      date: new Date().toISOString().split('T')[0],
       billImage: null
     };
   };
@@ -57,27 +108,27 @@ const AdminBudget = () => {
         ...updates
       }
     }));
-    // Clear any errors when user makes changes
     setFormErrors({});
   };
 
   const validateExpenseForm = (expense) => {
     const errors = {};
-    if (!expense.description) errors.description = 'Description is required';
-    if (!expense.amount) errors.amount = 'Amount is required';
+    if (!expense.title?.trim()) errors.title = 'Title is required';
+    if (!expense.description?.trim()) errors.description = 'Description is required';
+    if (!expense.amount || expense.amount <= 0) errors.amount = 'Amount must be greater than 0';
     if (!expense.date) errors.date = 'Date is required';
     if (!expense.billImage) errors.billImage = 'Bill image is required';
     return errors;
   };
 
-  const totalBudget = budgetCategories.reduce((sum, cat) => sum + cat.allocated, 0);
-  const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
+  const totalBudget = budgetCategories.reduce((sum, cat) => sum + (cat.allocated || 0), 0);
+  const totalSpent = budgetCategories.reduce((sum, cat) => sum + (cat.spent || 0), 0);
   const totalRemaining = totalBudget - totalSpent;
 
   const handleAddCategory = () => {
     setEditingCategory({
       id: Date.now(),
-      name: '',
+      name: categories[0] || '',
       allocated: 0,
       spent: 0,
       remaining: 0,
@@ -91,26 +142,52 @@ const AdminBudget = () => {
     setShowModal(true);
   };
 
-  const handleSaveCategory = () => {
+  const handleSaveCategory = async () => {
     if (editingCategory) {
-      const updatedCategory = {
-        ...editingCategory,
-        remaining: editingCategory.allocated - editingCategory.spent
-      };
+      try {
+        setLoading(true);
+        const categoryData = {
+          name: editingCategory.name,
+          allocated: editingCategory.allocated
+        };
 
-      setBudgetCategories(prev => {
-        const exists = prev.find(cat => cat.id === updatedCategory.id);
-        if (exists) {
-          return prev.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat);
+        const response = await fetch('http://localhost:8080/api/v1/budget/category', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(categoryData),
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to save category');
         }
-        return [...prev, updatedCategory];
-      });
-    }
+
+        const savedCategory = await response.json();
+        
+        setBudgetCategories(prev => {
+          const exists = prev.find(cat => cat.name === savedCategory.data.name);
+          if (exists) {
+            return prev.map(cat => cat.name === savedCategory.data.name ? savedCategory.data : cat);
+          }
+          return [...prev, savedCategory.data];
+        });
+
+        toast.success('Category saved successfully!');
+      } catch (error) {
+        console.error('Error saving category:', error);
+        toast.error(error.message || 'Failed to save category');
+      } finally {
+        setLoading(false);
     setShowModal(false);
     setEditingCategory(null);
+      }
+    }
   };
 
-  const handleAddExpense = (categoryId) => {
+  const handleAddExpense = async (categoryId) => {
     const expense = getNewExpense(categoryId);
     const errors = validateExpenseForm(expense);
     
@@ -120,37 +197,33 @@ const AdminBudget = () => {
       return;
     }
 
-    setBudgetCategories(prev => {
-      return prev.map(category => {
-        if (category.id === categoryId) {
-          const newExpense = {
-            id: Date.now(),
-            ...expense,
-            amount: parseFloat(expense.amount)
-          };
-          const updatedExpenses = [...category.expenses, newExpense];
-          const spent = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-          
-          return {
-            ...category,
-            expenses: updatedExpenses,
-            spent,
-            remaining: category.allocated - spent
-          };
-        }
-        return category;
-      });
-    });
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('title', expense.title);
+      formData.append('description', expense.description);
+      formData.append('amount', expense.amount);
+      formData.append('category', categoryId);
+      formData.append('date', expense.date);
+      formData.append('receipt', expense.billImage);
 
-    // Clear only the form for this specific category
+      await addExpense(formData);
+      toast.success('Expense added successfully!');
+      await fetchExpenses();
+      
     updateNewExpense(categoryId, {
+        title: '',
       description: '',
       amount: '',
-      date: '',
+        date: new Date().toISOString().split('T')[0],
       billImage: null
     });
-    
-    toast.success('Expense added successfully!');
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      toast.error(error.message || 'Failed to add expense');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditExpense = (categoryId, expense) => {
@@ -158,7 +231,7 @@ const AdminBudget = () => {
     updateNewExpense(categoryId, expense);
   };
 
-  const handleUpdateExpense = (categoryId) => {
+  const handleUpdateExpense = async (categoryId) => {
     const updatedExpense = getNewExpense(categoryId);
     const errors = validateExpenseForm(updatedExpense);
     
@@ -168,51 +241,59 @@ const AdminBudget = () => {
       return;
     }
 
-    setBudgetCategories(prev => {
-      return prev.map(category => {
-        if (category.id === categoryId) {
-          const updatedExpenses = category.expenses.map(exp => 
-            exp.id === editingExpense.id 
-              ? { ...exp, ...updatedExpense, amount: parseFloat(updatedExpense.amount) }
-              : exp
-          );
-          const spent = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-          
-          return {
-            ...category,
-            expenses: updatedExpenses,
-            spent,
-            remaining: category.allocated - spent
-          };
-        }
-        return category;
-      });
-    });
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('title', updatedExpense.title);
+      formData.append('description', updatedExpense.description);
+      formData.append('amount', updatedExpense.amount);
+      formData.append('category', categoryId);
+      formData.append('date', updatedExpense.date);
+      formData.append('receipt', updatedExpense.billImage);
+
+      await updateExpense(editingExpense.id, formData);
+      toast.success('Expense updated successfully!');
+      await fetchExpenses();
 
     setEditingExpense(null);
     updateNewExpense(categoryId, {
+        title: '',
       description: '',
       amount: '',
-      date: '',
+        date: new Date().toISOString().split('T')[0],
       billImage: null
     });
-    
-    toast.success('Expense updated successfully!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to update expense');
+      console.error('Error updating expense:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleBillUpload = (categoryId, e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateNewExpense(categoryId, { billImage: reader.result });
-        toast.success('Bill image uploaded successfully!');
-      };
-      reader.onerror = () => {
-        toast.error('Failed to upload bill image');
-      };
-      reader.readAsDataURL(file);
+  const handleBillUpload = (categoryId, event) => {
+    if (!event || !event.target || !event.target.files || !event.target.files[0]) {
+      toast.error('No file selected');
+      return;
     }
+
+    const file = event.target.files[0];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('File must be an image (JPEG, PNG, JPG) or PDF');
+      return;
+    }
+    
+    const maxSize = file.type === 'application/pdf' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      const maxSizeMB = file.type === 'application/pdf' ? '10MB' : '5MB';
+      toast.error(`File size must be less than ${maxSizeMB} for ${file.type === 'application/pdf' ? 'PDF' : 'image'} files`);
+      return;
+    }
+
+    updateNewExpense(categoryId, { billImage: file });
+    toast.success('Bill image uploaded successfully!');
   };
 
   const handleViewBill = (bill) => {
@@ -229,29 +310,22 @@ const AdminBudget = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteExpense = () => {
-    const { categoryId, id } = expenseToDelete;
+  const confirmDeleteExpense = async () => {
+    const { id } = expenseToDelete;
     
-    setBudgetCategories(prev => {
-      return prev.map(category => {
-        if (category.id === categoryId) {
-          const updatedExpenses = category.expenses.filter(exp => exp.id !== id);
-          const spent = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-          
-          return {
-            ...category,
-            expenses: updatedExpenses,
-            spent,
-            remaining: category.allocated - spent
-          };
-        }
-        return category;
-      });
-    });
-
+    try {
+      setLoading(true);
+      await deleteExpense(id);
+      toast.success('Expense deleted successfully!');
+      await fetchExpenses();
     setShowDeleteModal(false);
     setExpenseToDelete(null);
-    toast.success('Expense deleted successfully!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete expense');
+      console.error('Error deleting expense:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -339,6 +413,15 @@ const AdminBudget = () => {
                 <div className="flex space-x-4">
                   <input
                     type="text"
+                    placeholder="Title"
+                    className={`flex-1 px-4 py-2 border rounded-lg ${
+                      formErrors.title ? 'border-red-500' : ''
+                    }`}
+                    value={getNewExpense(category.id).title}
+                    onChange={(e) => updateNewExpense(category.id, { title: e.target.value })}
+                  />
+                  <input
+                    type="text"
                     placeholder="Description"
                     className={`flex-1 px-4 py-2 border rounded-lg ${
                       formErrors.description ? 'border-red-500' : ''
@@ -366,7 +449,7 @@ const AdminBudget = () => {
                   <div className="relative">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,application/pdf"
                       className="hidden"
                       id={`billUpload-${category.id}`}
                       onChange={(e) => handleBillUpload(category.id, e)}
@@ -394,9 +477,10 @@ const AdminBudget = () => {
                         onClick={() => {
                           setEditingExpense(null);
                           updateNewExpense(category.id, {
+                            title: '',
                             description: '',
                             amount: '',
-                            date: '',
+                            date: new Date().toISOString().split('T')[0],
                             billImage: null
                           });
                         }}
@@ -430,6 +514,9 @@ const AdminBudget = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Description
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -447,10 +534,13 @@ const AdminBudget = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {category.expenses.map((expense) => (
+                  {(category.expenses || []).map((expense) => (
                     <tr key={expense.id} className={`transition-colors duration-200 ${
                       editingExpense?.id === expense.id ? 'bg-blue-50' : ''
                     }`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {expense.title}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {expense.description}
                       </td>
@@ -507,7 +597,7 @@ const AdminBudget = () => {
         </button>
       </div>
 
-      {/* Modal */}
+      {/* Category Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -520,13 +610,16 @@ const AdminBudget = () => {
               </button>
             </div>
             <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Category Name"
+              <select
                 className="w-full px-4 py-2 border rounded-lg"
                 value={editingCategory.name}
                 onChange={(e) => setEditingCategory(prev => ({ ...prev, name: e.target.value }))}
-              />
+              >
+                <option value="">Select Category</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
               <input
                 type="number"
                 placeholder="Allocated Budget"
@@ -544,8 +637,9 @@ const AdminBudget = () => {
                 <button
                   onClick={handleSaveCategory}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  disabled={loading}
                 >
-                  Save
+                  {loading ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </div>
@@ -587,7 +681,7 @@ const AdminBudget = () => {
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Delete Expense</h3>
               <p className="mt-2 text-gray-600">
-                Are you sure you want to delete the expense "{expenseToDelete.description}"? This action cannot be undone.
+                Are you sure you want to delete the expense "{expenseToDelete.title}"? This action cannot be undone.
               </p>
             </div>
             <div className="flex justify-end space-x-4">
@@ -603,8 +697,9 @@ const AdminBudget = () => {
               <button
                 onClick={confirmDeleteExpense}
                 className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                disabled={loading}
               >
-                Yes, Delete
+                {loading ? 'Deleting...' : 'Yes, Delete'}
               </button>
             </div>
           </div>

@@ -5,7 +5,7 @@ import {
   updateFacility,
   deleteFacility,
 } from '../controllers/facilityController.js';
-import authenticateToken from '../middleware/authenticateToken.js';
+import { authenticateToken } from '../middleware/authenticateToken.js';
 
 const router = express.Router();
 

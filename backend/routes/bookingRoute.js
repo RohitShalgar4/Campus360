@@ -4,7 +4,7 @@ import {
   getBookings,
   updateBookingStatus,
 } from '../controllers/bookingController.js';
-import authenticateToken from '../middleware/authenticateToken.js';
+import { authenticateToken } from '../middleware/authenticateToken.js';
 
 const router = express.Router();
 
