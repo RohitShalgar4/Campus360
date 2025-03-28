@@ -152,20 +152,19 @@ function App() {
               }
             />
 
+            {/* Budget Page - Public Access */}
             <Route
               path="/budget"
               element={
-                <RequireAuth>
-                  <ProtectedRoute>
-                    {role === "admin" ? (
+                role === "admin" ? (
+                  <RequireAuth>
+                    <ProtectedRoute>
                       <AdminBudget />
-                    ) : role === "student" ? (
-                      <StudentBudget />
-                    ) : (
-                      <Navigate to="/" />
-                    )}
-                  </ProtectedRoute>
-                </RequireAuth>
+                    </ProtectedRoute>
+                  </RequireAuth>
+                ) : (
+                  <StudentBudget />
+                )
               }
             />
 
