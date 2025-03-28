@@ -9,6 +9,7 @@ const AdminBudget = () => {
   const [showModal, setShowModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -144,46 +145,52 @@ const AdminBudget = () => {
 
   const handleSaveCategory = async () => {
     if (editingCategory) {
-      try {
-        setLoading(true);
-        const categoryData = {
-          name: editingCategory.name,
-          allocated: editingCategory.allocated
-        };
+      // Show confirmation modal
+      setShowConfirmationModal(true);
+    }
+  };
 
-        const response = await fetch('http://localhost:8080/api/v1/budget/category', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(categoryData),
-          credentials: 'include'
-        });
+  const confirmSaveCategory = async () => {
+    try {
+      setLoading(true);
+      const categoryData = {
+        name: editingCategory.name,
+        allocated: editingCategory.allocated
+      };
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to save category');
-        }
+      const response = await fetch('http://localhost:8080/api/v1/budget/category', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categoryData),
+        credentials: 'include'
+      });
 
-        const savedCategory = await response.json();
-        
-        setBudgetCategories(prev => {
-          const exists = prev.find(cat => cat.name === savedCategory.data.name);
-          if (exists) {
-            return prev.map(cat => cat.name === savedCategory.data.name ? savedCategory.data : cat);
-          }
-          return [...prev, savedCategory.data];
-        });
-
-        toast.success('Category saved successfully!');
-      } catch (error) {
-        console.error('Error saving category:', error);
-        toast.error(error.message || 'Failed to save category');
-      } finally {
-        setLoading(false);
-    setShowModal(false);
-    setEditingCategory(null);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save category');
       }
+
+      const savedCategory = await response.json();
+      
+      setBudgetCategories(prev => {
+        const exists = prev.find(cat => cat.name === savedCategory.data.name);
+        if (exists) {
+          return prev.map(cat => cat.name === savedCategory.data.name ? savedCategory.data : cat);
+        }
+        return [...prev, savedCategory.data];
+      });
+
+      toast.success('Category saved successfully!');
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast.error(error.message || 'Failed to save category');
+    } finally {
+      setLoading(false);
+      setShowModal(false);
+      setShowConfirmationModal(false);
+      setEditingCategory(null);
     }
   };
 
@@ -700,6 +707,41 @@ const AdminBudget = () => {
                 disabled={loading}
               >
                 {loading ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Confirm Budget Update</h3>
+              <button 
+                onClick={() => setShowConfirmationModal(false)} 
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Do you want to continue with the budget for {editingCategory?.name} with Budget ₹{editingCategory?.allocated?.toLocaleString()}?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowConfirmationModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSaveCategory}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           </div>
