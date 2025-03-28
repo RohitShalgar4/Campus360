@@ -37,23 +37,21 @@ const upload = multer({
     }
 });
 
-// Protected routes (require authentication and admin access)
+// Public route for viewing budget data
+router.get("/all", getAllExpenses);
+
+// Protected admin routes
 router.use(authenticateToken);
 router.use(isAdmin);
 
-// Budget category routes
+// Budget category routes (admin only)
 router.post("/category", addBudgetCategory);
 router.get("/categories", getAllBudgetCategories);
 
-// Expense routes
+// Expense management routes (admin only)
 router.post("/add", upload.single('receipt'), addExpense);
-router.get("/all", getAllExpenses);
 router.get("/:id", getExpenseById);
 router.put("/:id", upload.single('receipt'), updateExpense);
 router.delete("/:id", deleteExpense);
-
-// Allow students to access the /budget/all endpoint
-router.use(authenticateToken);
-router.get("/all", getAllExpenses);
 
 export default router; 
