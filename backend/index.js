@@ -16,6 +16,7 @@ import budgetRoute from "./routes/budgetRoute.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import notificationRoute from "./routes/notificationRoute.js";
+import passwordRoute from "./routes/passwordRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,6 +64,7 @@ app.use("/api/v1/elections", electionRouter); // Election routes
 app.use("/api/v1/students", studentViolationRoute);
 app.use("/api/v1/budget", budgetRoute);
 app.use("/api/v1/notification", notificationRoute); // Budget routes
+app.use("/api/v1/password", passwordRoute); // Password routes
 
 // Default route
 app.get("/", (req, res) => {

@@ -30,7 +30,11 @@ const doctorModel = new mongoose.Schema({
         type: String,
         enum: ["Male", "Female", "Other"],
         required: true
-    } 
+    },
+    isFirstLogin: {
+        type: Boolean,
+        default: true
+    }
 }, { timestamps: true });
 
 export const Doctor = mongoose.model("Doctor", doctorModel);

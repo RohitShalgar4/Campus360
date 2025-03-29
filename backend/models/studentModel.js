@@ -44,7 +44,11 @@ const studentModel = new mongoose.Schema({
         type: String,
         enum: ["Male", "Female", "Other"],
         required: true
-    } 
+    },
+    isFirstLogin: {
+        type: Boolean,
+        default: true
+    }
 }, { timestamps: true });
 
 export const Student = mongoose.model("Student", studentModel);

@@ -16,7 +16,8 @@ export const isAuthenticated = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    req.id = decode.userId;
+    req.id = decode.id;
+    req.role = decode.role;
     next();
   } catch (error) {
     console.error("Authentication error:", error); // Log the error

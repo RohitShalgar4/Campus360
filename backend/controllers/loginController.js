@@ -56,6 +56,7 @@ export const login = async (req, res) => {
         token,
         role,
         fullName: user.full_name, // Include fullName in the response
+        isFirstLogin: user.isFirstLogin, // Include isFirstLogin in the response
         message: 'Logged in successfully',
       });
   } catch (error) {

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { Users, Calendar, FileText, AlertTriangle, DollarSign, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 function AdminDashboard() {
   const { user } = useAuthStore();
@@ -11,6 +13,23 @@ function AdminDashboard() {
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isDoctorModalOpen, setIsDoctorModalOpen] = useState(false);
+
+  // State for student form
+  const [studentForm, setStudentForm] = useState({
+    full_name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    mobile_No: '',
+    parentEmail: '',
+    student_id: '',
+    class: '',
+    department: '',
+    passoutYear: '',
+    gender: ''
+  });
+
+  const [loading, setLoading] = useState(false);
 
   const stats = [
     { name: 'Total Students', value: '1,234', icon: Users },
@@ -29,13 +48,60 @@ function AdminDashboard() {
   ];
 
   const handleBudgetClick = () => {
-    navigate('/budget'); // Navigate to budget page
+    navigate('/budget');
   };
 
-  const handleStudentSubmit = (e) => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setStudentForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleStudentSubmit = async (e) => {
     e.preventDefault();
-    // Add student submission logic here
-    setIsStudentModalOpen(false);
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        'http://localhost:8080/api/v1/student/register',
+        studentForm,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message || 'Student registered successfully');
+        setIsStudentModalOpen(false);
+        // Reset form
+        setStudentForm({
+          full_name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          mobile_No: '',
+          parentEmail: '',
+          student_id: '',
+          class: '',
+          department: '',
+          passoutYear: '',
+          gender: ''
+        });
+      } else {
+        toast.error(response.data.message || 'Failed to register student');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      const errorMessage = error.response?.data?.message || 'Error registering student';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAdminSubmit = (e) => {
@@ -115,40 +181,74 @@ function AdminDashboard() {
                   <form onSubmit={handleStudentSubmit} className="space-y-4">
                     <input 
                       type="text" 
+                      name="full_name"
+                      value={studentForm.full_name}
+                      onChange={handleInputChange}
                       placeholder="Full Name" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                     <input 
                       type="email" 
+                      name="email"
+                      value={studentForm.email}
+                      onChange={handleInputChange}
                       placeholder="Email" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                     <input 
                       type="password" 
+                      name="password"
+                      value={studentForm.password}
+                      onChange={handleInputChange}
                       placeholder="Password" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                     <input 
+                      type="password" 
+                      name="confirmPassword"
+                      value={studentForm.confirmPassword}
+                      onChange={handleInputChange}
+                      placeholder="Confirm Password" 
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <input 
                       type="tel" 
+                      name="mobile_No"
+                      value={studentForm.mobile_No}
+                      onChange={handleInputChange}
                       placeholder="Mobile Number" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                     <input 
                       type="email" 
+                      name="parentEmail"
+                      value={studentForm.parentEmail}
+                      onChange={handleInputChange}
                       placeholder="Parent Email" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
                     />
                     <input 
                       type="text" 
+                      name="student_id"
+                      value={studentForm.student_id}
+                      onChange={handleInputChange}
                       placeholder="Student ID" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
-                    <select className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <select 
+                      name="class"
+                      value={studentForm.class}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                      required
+                    >
                       <option value="">Select Class</option>
                       {["1st", "2nd", "3rd", "4th"].map(cls => (
                         <option key={cls} value={cls}>{cls}</option>
@@ -156,17 +256,29 @@ function AdminDashboard() {
                     </select>
                     <input 
                       type="text" 
+                      name="department"
+                      value={studentForm.department}
+                      onChange={handleInputChange}
                       placeholder="Department" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                     <input 
                       type="text" 
+                      name="passoutYear"
+                      value={studentForm.passoutYear}
+                      onChange={handleInputChange}
                       placeholder="Passout Year" 
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
-                    <select className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <select 
+                      name="gender"
+                      value={studentForm.gender}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                      required
+                    >
                       <option value="">Select Gender</option>
                       {["Male", "Female", "Other"].map(gender => (
                         <option key={gender} value={gender}>{gender}</option>
@@ -182,9 +294,10 @@ function AdminDashboard() {
                       </button>
                       <button 
                         type="submit"
-                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                        disabled={loading}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
                       >
-                        Add Student
+                        {loading ? 'Adding...' : 'Add Student'}
                       </button>
                     </div>
                   </form>

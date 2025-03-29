@@ -26,7 +26,11 @@ const adminModel = new mongoose.Schema({
         type: String,
         enum: ["Male", "Female", "Other"],
         required: true
-    } 
+    },
+    isFirstLogin: {
+        type: Boolean,
+        default: true
+    }
 }, { timestamps: true });
 
 export const Admin = mongoose.model("Admin", adminModel);
