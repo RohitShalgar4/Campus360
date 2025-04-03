@@ -1,4 +1,4 @@
-import express from 'express';
+import express from "express";
 import {
   createElection,
   getAllElections,
@@ -6,26 +6,25 @@ import {
   updateElection,
   deleteElection,
   voteForCandidate,
-} from '../controllers/electionController.js';
+  getStudentElections,
+} from "../controllers/electionController.js";
+import { authenticateToken, isAdmin } from "../middleware/authenticateToken.js";
 
 const router = express.Router();
 
-// Create a new election
-router.post('/', createElection); // Changed from '/elections'
+// Admin routes (protected)
+router.post("/", authenticateToken, isAdmin, createElection);
+router.get("/", authenticateToken, isAdmin, getAllElections);
+router.put("/:id", authenticateToken, isAdmin, updateElection);
+router.delete("/:id", authenticateToken, isAdmin, deleteElection);
 
-// Get all elections
-router.get('/', getAllElections); // Changed from '/elections'
-
-// Get a single election by ID
-router.get('/:id', getElectionById);
-
-// Update an election
-router.put('/:id', updateElection);
-
-// Delete an election
-router.delete('/:id', deleteElection);
-
-// Vote for a candidate in an election
-router.post('/:electionId/vote/:candidateId', voteForCandidate);
+// Student routes (require authentication but not admin)
+router.get("/student/:studentId", authenticateToken, getStudentElections);
+router.get("/:id", authenticateToken, getElectionById);
+router.post(
+  "/:electionId/vote/:candidateId",
+  authenticateToken,
+  voteForCandidate
+);
 
 export { router as electionRouter };
