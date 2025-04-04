@@ -58,17 +58,19 @@ export const login = async (req, res) => {
     // Prepare user data based on role
     let userData = {
       id: user._id,
-      fullName: user.full_name,
+      full_name: user.full_name,
       email: user.email,
+      role: role,
+      isFirstLogin: user.isFirstLogin,
     };
 
-    // Add role-specific data
+    // Add role-specific fields
     if (role === "student") {
       userData = {
         ...userData,
         department: user.department,
         class: user.class,
-        studentId: user.student_id,
+        student_id: user.student_id,
       };
     } else if (role === "admin") {
       userData = {
@@ -82,28 +84,28 @@ export const login = async (req, res) => {
       };
     }
 
-    console.log("Login response user data:", userData);
+    // Set the token in a cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
 
-    // Send the response
-    return res
-      .status(200)
-      .cookie("token", token, {
-        maxAge: 1 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        sameSite: "strict",
-      })
-      .json({
-        success: true,
-        token,
-        role,
-        user: userData,
-        message: "Logged in successfully",
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      role,
+      user: userData,
+      isFirstLogin: user.isFirstLogin,
+    });
   } catch (error) {
     console.error("Login error:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during login",
+    });
   }
 };
 
