@@ -55,11 +55,20 @@ export const useAuthStore = create((set) => ({
   ...getStoredAuth(),
 
   login: (userData, token, role) => {
-    localStorage.setItem('user', JSON.stringify(userData));
+    // Ensure userData has all required fields
+    const completeUserData = {
+      ...userData,
+      id: userData.id || userData._id, // Handle both id and _id
+      department: userData.department || '',
+      class: userData.class || '',
+      full_name: userData.full_name || userData.fullName || '',
+    };
+    
+    localStorage.setItem('user', JSON.stringify(completeUserData));
     localStorage.setItem('token', token);
     localStorage.setItem('role', role);
     set({
-      user: userData,
+      user: completeUserData,
       isAuthenticated: true,
       token,
       role
@@ -67,10 +76,19 @@ export const useAuthStore = create((set) => ({
   },
 
   updateUser: (userData) => {
-    localStorage.setItem('user', JSON.stringify(userData));
+    // Ensure userData has all required fields
+    const completeUserData = {
+      ...userData,
+      id: userData.id || userData._id, // Handle both id and _id
+      department: userData.department || '',
+      class: userData.class || '',
+      full_name: userData.full_name || userData.fullName || '',
+    };
+    
+    localStorage.setItem('user', JSON.stringify(completeUserData));
     set(state => ({
       ...state,
-      user: userData
+      user: completeUserData
     }));
   },
 
