@@ -52,8 +52,8 @@ function Login() {
 
       console.log('Login response:', res.data); // Debug log
 
-      const { token, role, fullName, isFirstLogin } = res.data;
-      console.log('isFirstLogin:', isFirstLogin); // Debug log
+      const { token, role, user, isFirstLogin } = res.data;
+      console.log('User data:', user); // Debug log
 
       // If it's first login, show the password update popup before logging in
       if (isFirstLogin) {
@@ -63,7 +63,7 @@ function Login() {
       }
 
       // Only login and redirect if it's not first login
-      login({ email, fullName, isFirstLogin }, token, role);
+      login(user, token, role);
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
       toast.success(`Welcome ${role}!`);
