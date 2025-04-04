@@ -1,26 +1,29 @@
 import jwt from 'jsonwebtoken';
 
 export const authenticateToken = (req, res, next) => {
-  const token = req.cookies.token; // Assuming the token is stored in a cookie
+  try {
+    // Get token from Authorization header
+    let token = req.headers.authorization?.split(" ")[1];
 
-  console.log("Token from cookie:", token); // Debugging: Log the token
-
-  if (!token) {
-    return res.status(401).json({ message: 'Unauthorized: Token missing' });
-  }
-
-  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
-    if (err) {
-      console.error("Token verification error:", err); // Debugging: Log the error
-      return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+    // If no token in header, try to get from cookies
+    if (!token) {
+      token = req.cookies.token;
     }
 
-    console.log("Decoded token:", decoded); // Debugging: Log the decoded token
+    console.log("Token from header or cookie:", token); // Debug log
 
-    // Set the user object in the request
+    if (!token) {
+      return res.status(401).json({ message: "Authentication token is missing" });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    console.log("Decoded token:", decoded); // Debug log
+
+    // Set user info in request
     req.user = {
-      id: decoded.id, // Use `id` from the token payload
-      role: decoded.role, // Include role for role-based access control
+      id: decoded.id,
+      role: decoded.role
     };
 
     // Add admin check helper
@@ -29,13 +32,16 @@ export const authenticateToken = (req, res, next) => {
     };
 
     next();
-  });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return res.status(401).json({ message: "Invalid token" });
+  }
 };
 
 // Admin middleware
 export const isAdmin = (req, res, next) => {
-  if (!req.isAdmin()) {
-    return res.status(403).json({ message: 'Access denied: Admin privileges required' });
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied. Admin only." });
   }
   next();
 };
