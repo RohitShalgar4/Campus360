@@ -71,6 +71,22 @@ export const register = async (req, res) => {
       });
     }
 
+    // Validate class
+    if (!["FY", "SY", "TY", "BE"].includes(studentClass.toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid class. Must be one of: FY, SY, TY, BE"
+      });
+    }
+
+    // Validate department
+    if (!["CSE", "ENTC", "Electrical", "Mechanical", "Civil"].includes(department.toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department. Must be one of: CSE, ENTC, Electrical, Mechanical, Civil"
+      });
+    }
+
     // Hash the password before saving it
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -82,8 +98,8 @@ export const register = async (req, res) => {
       mobile_No,
       parentEmail,
       student_id,
-      class: studentClass,
-      department,
+      class: studentClass.toUpperCase(),
+      department: department.toUpperCase(),
       passoutYear,
       gender,
       isFirstLogin: true
@@ -103,7 +119,10 @@ export const register = async (req, res) => {
         id: newStudent._id,
         full_name: newStudent.full_name,
         email: newStudent.email,
-        student_id: newStudent.student_id
+        student_id: newStudent.student_id,
+        department: newStudent.department,
+        class: newStudent.class,
+        gender: newStudent.gender
       }
     });
   } catch (error) {
